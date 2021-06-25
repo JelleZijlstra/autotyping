@@ -64,17 +64,18 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
     def __init__(
         self,
         context: CodemodContext,
-        annotate_optional: Sequence[str],
+        annotate_optional: Optional[Sequence[str]],
         auto_none: bool,
         auto_boolean_arg: bool,
     ) -> None:
         super().__init__(context)
         self.state = State(
-            annotate_optionals=[AnnotateOptional.make(s) for s in annotate_optional],
+            annotate_optionals=[AnnotateOptional.make(s) for s in annotate_optional]
+            if annotate_optional
+            else [],
             auto_none=auto_none,
             auto_boolean_arg=auto_boolean_arg,
         )
-        print(self.state)
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> Optional[bool]:
         self.state.seen_return_statement.append(False)
