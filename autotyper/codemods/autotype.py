@@ -40,7 +40,10 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         arg_parser.add_argument(
             "--annotate-optional",
             nargs="*",
-            help="foo:bar.Baz annotates any argument named 'foo' with a default of None as 'bar.Baz'",
+            help=(
+                "foo:bar.Baz annotates any argument named 'foo' with a default of None"
+                " as 'bar.Baz'"
+            ),
         )
         arg_parser.add_argument(
             "--auto-none",
@@ -52,7 +55,10 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             "--auto-boolean-arg",
             action="store_true",
             default=False,
-            help="Automatically add bool annotation to parameters with a default of True or False",
+            help=(
+                "Automatically add bool annotation to parameters with a default of True"
+                " or False"
+            ),
         )
 
     def __init__(
