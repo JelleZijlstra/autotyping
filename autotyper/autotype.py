@@ -8,21 +8,22 @@ from libcst.codemod.visitors import AddImportsVisitor
 
 
 @dataclass
-class AnnotateOptional:
+class NamedParam:
     name: str
     module: str
     type_name: str
 
     @classmethod
-    def make(cls, input: str) -> "AnnotateOptional":
+    def make(cls, input: str) -> "NamedParam":
         name, type_path = input.split(":")
         module, type_name = type_path.rsplit(".", maxsplit=1)
-        return AnnotateOptional(name, module, type_name)
+        return NamedParam(name, module, type_name)
 
 
 @dataclass
 class State:
-    annotate_optionals: List[AnnotateOptional]
+    annotate_optionals: List[NamedParam]
+    annotate_named_params: List[NamedParam]
     none_return: bool
     bool_param: bool
     seen_return_statement: List[bool] = field(default_factory=lambda: [False])
@@ -46,6 +47,14 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             ),
         )
         arg_parser.add_argument(
+            "--annotate-named-param",
+            nargs="*",
+            help=(
+                "foo:bar.Baz annotates any argument named 'foo' with no default"
+                " as 'bar.Baz'"
+            ),
+        )
+        arg_parser.add_argument(
             "--none-return",
             action="store_true",
             default=False,
@@ -65,13 +74,17 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         self,
         context: CodemodContext,
         annotate_optional: Optional[Sequence[str]] = None,
+        annotate_named_param: Optional[Sequence[str]] = None,
         none_return: bool = False,
         bool_param: bool = False,
     ) -> None:
         super().__init__(context)
         self.state = State(
-            annotate_optionals=[AnnotateOptional.make(s) for s in annotate_optional]
+            annotate_optionals=[NamedParam.make(s) for s in annotate_optional]
             if annotate_optional
+            else [],
+            annotate_named_params=[NamedParam.make(s) for s in annotate_named_param]
+            if annotate_named_param
             else [],
             none_return=none_return,
             bool_param=bool_param,
@@ -132,20 +145,27 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         if default_is_none:
             for anno_optional in self.state.annotate_optionals:
                 if original_node.name.value == anno_optional.name:
-                    AddImportsVisitor.add_needed_import(
-                        self.context, anno_optional.module, anno_optional.type_name
+                    return self._annotate_param(
+                        anno_optional, updated_node, optional=True
                     )
-                    AddImportsVisitor.add_needed_import(
-                        self.context, "typing", "Optional"
-                    )
-                    type_name = libcst.Name(value=anno_optional.type_name)
-                    anno = libcst.Subscript(
-                        value=libcst.Name(value="Optional"),
-                        slice=[
-                            libcst.SubscriptElement(slice=libcst.Index(value=type_name))
-                        ],
-                    )
-                    return updated_node.with_changes(
-                        annotation=libcst.Annotation(annotation=anno)
-                    )
+        elif original_node.default is None:
+            for anno_named_param in self.state.annotate_named_params:
+                if original_node.name.value == anno_named_param.name:
+                    return self._annotate_param(anno_named_param, updated_node)
         return updated_node
+
+    def _annotate_param(
+        self, param: NamedParam, updated_node: libcst.Param, optional: bool = False
+    ) -> None:
+        AddImportsVisitor.add_needed_import(self.context, param.module, param.type_name)
+        if optional:
+            AddImportsVisitor.add_needed_import(self.context, "typing", "Optional")
+        type_name = libcst.Name(value=param.type_name)
+        if optional:
+            anno = libcst.Subscript(
+                value=libcst.Name(value="Optional"),
+                slice=[libcst.SubscriptElement(slice=libcst.Index(value=type_name))],
+            )
+        else:
+            anno = type_name
+        return updated_node.with_changes(annotation=libcst.Annotation(annotation=anno))
