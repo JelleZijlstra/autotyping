@@ -145,14 +145,18 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         if default_is_none:
             for anno_optional in self.state.annotate_optionals:
                 if original_node.name.value == anno_optional.name:
-                    return self._annotate_param(anno_optional, updated_node, optional=True)
+                    return self._annotate_param(
+                        anno_optional, updated_node, optional=True
+                    )
         elif original_node.default is None:
             for anno_named_param in self.state.annotate_named_params:
                 if original_node.name.value == anno_named_param.name:
                     return self._annotate_param(anno_named_param, updated_node)
         return updated_node
 
-    def _annotate_param(self, param: NamedParam, updated_node: libcst.Param, optional: bool = False) -> None:
+    def _annotate_param(
+        self, param: NamedParam, updated_node: libcst.Param, optional: bool = False
+    ) -> None:
         AddImportsVisitor.add_needed_import(self.context, param.module, param.type_name)
         if optional:
             AddImportsVisitor.add_needed_import(self.context, "typing", "Optional")
