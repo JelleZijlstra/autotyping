@@ -28,6 +28,27 @@ more transformations. The following are supported:
   default that is named `foo` with `bar.Baz`. For example, use
   `--annotate-named-param uid:my_types.Uid` to annotate any `uid`
   parameter in your codebase with no default as `my_types.Uid`.
+- `--annotate-magics`: add type annotation to certain magic methods.
+  Currently this does the following:
+  - `__str__` returns `str`
+  - `__repr__` returns `str`
+  - `__len__` returns `int`
+  - `__init__` returns `None`
+  - `__del__` returns `None`
+  - `__bool__` returns `bool`
+  - `__bytes__` returns `bytes`
+  - `__format__` returns `str`
+  - `__contains__` returns `bool`
+  - `__complex__` returns `complex`
+  - `__int__` returns `int`
+  - `__float__` returns `float`
+  - `__index__` returns `int`
+- `--annotate-imprecise-magics`: add imprecise type annotations for
+  some additional magic methods. Currently this adds `typing.Iterator`
+  return annotations to `__iter__`, `__await__`, and `__reversed__`.
+  These annotations should have a generic parameter to indicate what
+  you're iterating over, but that's too hard for autotyper to figure
+  out.
 
 Things to add:
 
