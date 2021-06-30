@@ -1,1 +1,3 @@
 __pycache__/
+.tox/
+autotyper.egg-info/
