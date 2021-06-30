@@ -90,3 +90,39 @@ class TestAutotype(CodemodTest):
                 pass
         """
         self.assertCodemod(before, after, annotate_named_param=["uid:my_types.Uid"])
+
+    def test_annotate_magics(self) -> None:
+        before = """
+            def __str__():
+                pass
+
+            def __not_str__():
+                pass
+        """
+        after = """
+            def __str__() -> str:
+                pass
+
+            def __not_str__():
+                pass
+        """
+        self.assertCodemod(before, after, annotate_magics=True)
+
+    def test_annotate_imprecise_magics(self) -> None:
+        before = """
+            def __iter__():
+                pass
+
+            def __not_iter__():
+                pass
+        """
+        after = """
+            from typing import Iterator
+
+            def __iter__() -> Iterator:
+                pass
+
+            def __not_iter__():
+                pass
+        """
+        self.assertCodemod(before, after, annotate_imprecise_magics=True)

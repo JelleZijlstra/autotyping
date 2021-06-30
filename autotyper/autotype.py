@@ -24,11 +24,35 @@ class NamedParam:
 class State:
     annotate_optionals: List[NamedParam]
     annotate_named_params: List[NamedParam]
+    annotate_magics: bool
+    annotate_imprecise_magics: bool
     none_return: bool
     bool_param: bool
     seen_return_statement: List[bool] = field(default_factory=lambda: [False])
     seen_raise_statement: List[bool] = field(default_factory=lambda: [False])
     seen_yield: List[bool] = field(default_factory=lambda: [False])
+
+
+SIMPLE_MAGICS = {
+    "__str__": "str",
+    "__repr__": "str",
+    "__len__": "int",
+    "__init__": "None",
+    "__del__": "None",
+    "__bool__": "bool",
+    "__bytes__": "bytes",
+    "__format__": "str",
+    "__contains__": "bool",
+    "__complex__": "complex",
+    "__int__": "int",
+    "__float__": "float",
+    "__index__": "int",
+}
+IMPRECISE_MAGICS = {
+    "__iter__": ("typing", "Iterator"),
+    "__reversed__": ("typing", "Iterator"),
+    "__await__": ("typing", "Iterator"),
+}
 
 
 class AutotypeCommand(VisitorBasedCodemodCommand):
@@ -69,12 +93,26 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
                 " or False"
             ),
         )
+        arg_parser.add_argument(
+            "--annotate-magics",
+            action="store_true",
+            default=False,
+            help="Add annotations to certain magic methods (e.g., __str__)",
+        )
+        arg_parser.add_argument(
+            "--annotate-imprecise-magics",
+            action="store_true",
+            default=False,
+            help="Add annotations to magic methods that are less precise (e.g., Iterable for __iter__)",
+        )
 
     def __init__(
         self,
         context: CodemodContext,
         annotate_optional: Optional[Sequence[str]] = None,
         annotate_named_param: Optional[Sequence[str]] = None,
+        annotate_magics: bool = False,
+        annotate_imprecise_magics: bool = False,
         none_return: bool = False,
         bool_param: bool = False,
     ) -> None:
@@ -88,6 +126,8 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             else [],
             none_return=none_return,
             bool_param=bool_param,
+            annotate_magics=annotate_magics,
+            annotate_imprecise_magics=annotate_imprecise_magics,
         )
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> Optional[bool]:
@@ -111,16 +151,35 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         seen_return = self.state.seen_return_statement.pop()
         seen_raise = self.state.seen_raise_statement.pop()
         seen_yield = self.state.seen_yield.pop()
-        if (
-            self.state.none_return
-            and original_node.returns is None
-            and not seen_raise
-            and not seen_return
-            and not seen_yield
-        ):
-            updated_node = updated_node.with_changes(
-                returns=libcst.Annotation(annotation=libcst.Name(value="None"))
-            )
+        if original_node.returns is None:
+            if (
+                self.state.none_return
+                and not seen_raise
+                and not seen_return
+                and not seen_yield
+            ):
+                return updated_node.with_changes(
+                    returns=libcst.Annotation(annotation=libcst.Name(value="None"))
+                )
+            name = original_node.name.value
+            if self.state.annotate_magics:
+                if name in SIMPLE_MAGICS:
+                    return updated_node.with_changes(
+                        returns=libcst.Annotation(
+                            annotation=libcst.Name(value=SIMPLE_MAGICS[name])
+                        )
+                    )
+            if self.state.annotate_imprecise_magics:
+                if name in IMPRECISE_MAGICS:
+                    module, imported_name = IMPRECISE_MAGICS[name]
+                    AddImportsVisitor.add_needed_import(
+                        self.context, module, imported_name
+                    )
+                    return updated_node.with_changes(
+                        returns=libcst.Annotation(
+                            annotation=libcst.Name(value=imported_name)
+                        )
+                    )
         return updated_node
 
     def leave_Param(
