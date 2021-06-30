@@ -83,7 +83,8 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         self.state.seen_yield.append(False)
 
     def visit_Return(self, node: libcst.Return) -> Optional[bool]:
-        self.state.seen_return_statement[-1] = True
+        if node.value is not None:
+            self.state.seen_return_statement[-1] = True
 
     def visit_Raise(self, node: libcst.Raise) -> Optional[bool]:
         self.state.seen_raise_statement[-1] = True

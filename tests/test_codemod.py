@@ -25,6 +25,9 @@ class TestAutotype(CodemodTest):
 
             def bar():
                 return 1
+
+            def baz():
+                return
         """
         after = """
             def foo() -> None:
@@ -32,6 +35,9 @@ class TestAutotype(CodemodTest):
 
             def bar():
                 return 1
+
+            def baz() -> None:
+                return
         """
         self.assertCodemod(before, after, none_return=True)
 
