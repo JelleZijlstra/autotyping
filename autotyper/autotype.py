@@ -23,8 +23,8 @@ class AnnotateOptional:
 @dataclass
 class State:
     annotate_optionals: List[AnnotateOptional]
-    auto_none: bool
-    auto_boolean_arg: bool
+    none_return: bool
+    bool_param: bool
     seen_return_statement: List[bool] = field(default_factory=lambda: [False])
     seen_raise_statement: List[bool] = field(default_factory=lambda: [False])
     seen_yield: List[bool] = field(default_factory=lambda: [False])
@@ -46,13 +46,13 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             ),
         )
         arg_parser.add_argument(
-            "--auto-none",
+            "--none-return",
             action="store_true",
             default=False,
             help="Automatically add None return types",
         )
         arg_parser.add_argument(
-            "--auto-boolean-arg",
+            "--bool-param",
             action="store_true",
             default=False,
             help=(
@@ -64,17 +64,17 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
     def __init__(
         self,
         context: CodemodContext,
-        annotate_optional: Optional[Sequence[str]],
-        auto_none: bool,
-        auto_boolean_arg: bool,
+        annotate_optional: Optional[Sequence[str]] = None,
+        none_return: bool = False,
+        bool_param: bool = False,
     ) -> None:
         super().__init__(context)
         self.state = State(
             annotate_optionals=[AnnotateOptional.make(s) for s in annotate_optional]
             if annotate_optional
             else [],
-            auto_none=auto_none,
-            auto_boolean_arg=auto_boolean_arg,
+            none_return=none_return,
+            bool_param=bool_param,
         )
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> Optional[bool]:
@@ -98,7 +98,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         seen_raise = self.state.seen_raise_statement.pop()
         seen_yield = self.state.seen_yield.pop()
         if (
-            self.state.auto_none
+            self.state.none_return
             and original_node.returns is None
             and not seen_raise
             and not seen_return
@@ -115,7 +115,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         if original_node.annotation is not None:
             return updated_node
         if (
-            self.state.auto_boolean_arg
+            self.state.bool_param
             and original_node.default is not None
             and isinstance(original_node.default, libcst.Name)
             and original_node.default.value in ("True", "False")

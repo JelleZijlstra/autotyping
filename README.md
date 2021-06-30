@@ -14,9 +14,9 @@ Here's how I use it:
 
 By default it does nothing; you have to add flags to make it do
 more transformations. The following are supported:
-- `--auto-none`: add a `-> None` return type to functions without any
+- `--none-return`: add a `-> None` return type to functions without any
   return, yield, or raise in their body
-- `--auto-boolean-arg`: add a `: bool` annotation to any function
+- `--bool-param`: add a `: bool` annotation to any function
   parameter with a default of `True` or `False`
 - `--annotate-optional foo:bar.Baz`: for any parameter of the form
   `foo=None`, add `Baz`, imported from `bar`, as the type. For example,
