@@ -71,3 +71,22 @@ class TestAutotype(CodemodTest):
                 pass
         """
         self.assertCodemod(before, after, annotate_optional=["uid:my_types.Uid"])
+
+    def test_annotate_named_param(self) -> None:
+        before = """
+            def foo(uid, qid):
+                pass
+
+            def bar(uid=1):
+                pass
+        """
+        after = """
+            from my_types import Uid
+
+            def foo(uid: Uid, qid):
+                pass
+
+            def bar(uid=1):
+                pass
+        """
+        self.assertCodemod(before, after, annotate_named_param=["uid:my_types.Uid"])
