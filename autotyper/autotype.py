@@ -219,10 +219,13 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         seen_raise = self.state.seen_raise_statement.pop()
         seen_yield = self.state.seen_yield.pop()
         return_types = self.state.seen_return_types.pop()
+        name = original_node.name.value
+        if self.state.annotate_magics and name in ("__exit__", "__aexit__"):
+            updated_node = self.annotate_exit(updated_node)
+
         if original_node.returns is not None:
             return updated_node
 
-        name = original_node.name.value
         if self.state.annotate_magics:
             if name in SIMPLE_MAGICS:
                 return updated_node.with_changes(
@@ -260,6 +263,86 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
                 )
 
         return updated_node
+
+    def annotate_exit(self, node: libcst.FunctionDef) -> libcst.FunctionDef:
+        if (
+            node.params.star_arg is not libcst.MaybeSentinel.DEFAULT
+            or node.params.kwonly_params
+            or node.params.star_kwarg
+        ):
+            return node
+        # 4 for def __exit__(self, type, value, tb)
+        if len(node.params.params) == 4:
+            params = node.params.params
+            is_pos_only = False
+        elif len(node.params.posonly_params) == 4:
+            params = node.params.posonly_params
+            is_pos_only = True
+        else:
+            return node
+        new_params = [params[0]]
+
+        # type
+        if params[1].annotation:
+            new_params.append(params[1])
+        else:
+            AddImportsVisitor.add_needed_import(self.context, "typing", "Optional")
+            AddImportsVisitor.add_needed_import(self.context, "typing", "Type")
+            type_anno = libcst.Subscript(
+                value=libcst.Name(value="Type"),
+                slice=[
+                    libcst.SubscriptElement(
+                        slice=libcst.Index(value=libcst.Name(value="BaseException"))
+                    )
+                ],
+            )
+            anno = libcst.Subscript(
+                value=libcst.Name(value="Optional"),
+                slice=[libcst.SubscriptElement(slice=libcst.Index(value=type_anno))],
+            )
+            new_params.append(
+                params[1].with_changes(annotation=libcst.Annotation(annotation=anno))
+            )
+
+        # value
+        if params[2].annotation:
+            new_params.append(params[2])
+        else:
+            AddImportsVisitor.add_needed_import(self.context, "typing", "Optional")
+            anno = libcst.Subscript(
+                value=libcst.Name(value="Optional"),
+                slice=[
+                    libcst.SubscriptElement(
+                        slice=libcst.Index(value=libcst.Name(value="BaseException"))
+                    )
+                ],
+            )
+            new_params.append(
+                params[2].with_changes(annotation=libcst.Annotation(annotation=anno))
+            )
+
+        # tb
+        if params[3].annotation:
+            new_params.append(params[3])
+        else:
+            AddImportsVisitor.add_needed_import(self.context, "types", "TracebackType")
+            anno = libcst.Subscript(
+                value=libcst.Name(value="Optional"),
+                slice=[
+                    libcst.SubscriptElement(
+                        slice=libcst.Index(value=libcst.Name(value="TracebackType"))
+                    )
+                ],
+            )
+            new_params.append(
+                params[3].with_changes(annotation=libcst.Annotation(annotation=anno))
+            )
+
+        if is_pos_only:
+            new_parameters = node.params.with_changes(posonly_params=new_params)
+        else:
+            new_parameters = node.params.with_changes(params=new_params)
+        return node.with_changes(params=new_parameters)
 
     def leave_Param(
         self, original_node: libcst.Param, updated_node: libcst.Param
