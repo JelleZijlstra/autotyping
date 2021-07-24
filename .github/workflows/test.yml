@@ -1,4 +1,4 @@
-name: typeshed-client
+name: autotyper
 
 on:
   - push
