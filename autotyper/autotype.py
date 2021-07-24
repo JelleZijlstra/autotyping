@@ -31,6 +31,7 @@ class State:
     seen_return_statement: List[bool] = field(default_factory=lambda: [False])
     seen_raise_statement: List[bool] = field(default_factory=lambda: [False])
     seen_yield: List[bool] = field(default_factory=lambda: [False])
+    in_lambda: bool = False
 
 
 SIMPLE_MAGICS = {
@@ -145,6 +146,15 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
     def visit_Yield(self, node: libcst.Yield) -> Optional[bool]:
         self.state.seen_yield[-1] = True
 
+    def visit_Lambda(self, node: libcst.Lambda) -> Optional[bool]:
+        self.state.in_lambda = True
+
+    def leave_Lambda(
+        self, original_node: libcst.Lambda, updated_node: libcst.Lambda
+    ) -> libcst.CSTNode:
+        self.state.in_lambda = False
+        return updated_node
+
     def leave_FunctionDef(
         self, original_node: libcst.FunctionDef, updated_node: libcst.FunctionDef
     ) -> libcst.CSTNode:
@@ -185,6 +195,9 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
     def leave_Param(
         self, original_node: libcst.Param, updated_node: libcst.Param
     ) -> libcst.CSTNode:
+        if self.state.in_lambda:
+            # Lambdas can't have annotations
+            return updated_node
         if original_node.annotation is not None:
             return updated_node
         if (
