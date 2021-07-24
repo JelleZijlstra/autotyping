@@ -41,6 +41,41 @@ class TestAutotype(CodemodTest):
         """
         self.assertCodemod(before, after, none_return=True)
 
+    def test_scalar_return(self) -> None:
+        before = """
+            def foo():
+                pass
+
+            def bar():
+                return 1
+
+            def baz() -> float:
+                return "not a float"
+
+            def two_returns(condition):
+                if condition:
+                    return 42
+                else:
+                    return
+        """
+        after = """
+            def foo():
+                pass
+
+            def bar() -> int:
+                return 1
+
+            def baz() -> float:
+                return "not a float"
+
+            def two_returns(condition):
+                if condition:
+                    return 42
+                else:
+                    return
+        """
+        self.assertCodemod(before, after, scalar_return=True)
+
     def test_bool_param(self) -> None:
         before = """
             def foo(x = False, y = 0, z: int = False):
