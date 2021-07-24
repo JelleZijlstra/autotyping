@@ -44,11 +44,15 @@ class TestAutotype(CodemodTest):
     def test_bool_param(self) -> None:
         before = """
             def foo(x = False, y = 0, z: int = False):
-                pass
+                lambda x=False: None
+
+            lambda x=False: None
         """
         after = """
             def foo(x: bool = False, y = 0, z: int = False):
-                pass
+                lambda x=False: None
+
+            lambda x=False: None
         """
         self.assertCodemod(before, after, bool_param=True)
 
