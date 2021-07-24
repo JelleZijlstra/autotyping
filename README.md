@@ -63,7 +63,5 @@ more transformations. The following are supported:
 
 Things to add:
 
-- Infer asynq functions and if so add return types even if there is
-  a yield in the function
 - Infer `-> bool` as the return type if all return statements are
-  `True`, `False`, or boolean expressions like `==`.
+  boolean expressions like `==`.

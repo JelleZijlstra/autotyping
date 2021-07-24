@@ -215,6 +215,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
     def leave_FunctionDef(
         self, original_node: libcst.FunctionDef, updated_node: libcst.FunctionDef
     ) -> libcst.CSTNode:
+        is_asynq = any(is_asynq_decorator(dec) for dec in original_node.decorators)
         seen_return = self.state.seen_return_statement.pop()
         seen_raise = self.state.seen_raise_statement.pop()
         seen_yield = self.state.seen_yield.pop()
@@ -247,13 +248,17 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             self.state.none_return
             and not seen_raise
             and not seen_return
-            and not seen_yield
+            and (is_asynq or not seen_yield)
         ):
             return updated_node.with_changes(
                 returns=libcst.Annotation(annotation=libcst.Name(value="None"))
             )
 
-        if self.state.scalar_return and not seen_yield and len(return_types) == 1:
+        if (
+            self.state.scalar_return
+            and (is_asynq or not seen_yield)
+            and len(return_types) == 1
+        ):
             return_type = next(iter(return_types))
             if return_type in {bool, int, float, str, bytes}:
                 return updated_node.with_changes(
@@ -425,3 +430,18 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
         return bool
     else:
         return None
+
+
+def is_asynq_decorator(dec: libcst.Decorator) -> bool:
+    """Is this @asynq()?"""
+    if not isinstance(dec.decorator, libcst.Call):
+        return False
+    call = dec.decorator
+    if not isinstance(call.func, libcst.Name):
+        return False
+    if call.func.value != "asynq":
+        return False
+    if call.args:
+        # @asynq() with custom arguments may do something unexpected
+        return False
+    return True
