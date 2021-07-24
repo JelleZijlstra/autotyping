@@ -27,8 +27,10 @@ class State:
     annotate_magics: bool
     annotate_imprecise_magics: bool
     none_return: bool
+    scalar_return: bool
     param_types: Set[Type[object]]
     seen_return_statement: List[bool] = field(default_factory=lambda: [False])
+    seen_return_types: List[Set[Type[object]]] = field(default_factory=lambda: [set()])
     seen_raise_statement: List[bool] = field(default_factory=lambda: [False])
     seen_yield: List[bool] = field(default_factory=lambda: [False])
     in_lambda: bool = False
@@ -84,6 +86,12 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             action="store_true",
             default=False,
             help="Automatically add None return types",
+        )
+        arg_parser.add_argument(
+            "--scalar-return",
+            action="store_true",
+            default=False,
+            help="Automatically add int, str, bytes, float, and bool return types",
         )
         arg_parser.add_argument(
             "--bool-param",
@@ -147,6 +155,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         annotate_magics: bool = False,
         annotate_imprecise_magics: bool = False,
         none_return: bool = False,
+        scalar_return: bool = False,
         bool_param: bool = False,
         str_param: bool = False,
         bytes_param: bool = False,
@@ -169,6 +178,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             if annotate_named_param
             else [],
             none_return=none_return,
+            scalar_return=scalar_return,
             param_types={typ for param, typ in param_type_pairs if param},
             annotate_magics=annotate_magics,
             annotate_imprecise_magics=annotate_imprecise_magics,
@@ -178,10 +188,14 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         self.state.seen_return_statement.append(False)
         self.state.seen_raise_statement.append(False)
         self.state.seen_yield.append(False)
+        self.state.seen_return_types.append(set())
 
     def visit_Return(self, node: libcst.Return) -> Optional[bool]:
         if node.value is not None:
             self.state.seen_return_statement[-1] = True
+            self.state.seen_return_types[-1].add(type_of_expression(node.value))
+        else:
+            self.state.seen_return_types[-1].add(None)
 
     def visit_Raise(self, node: libcst.Raise) -> Optional[bool]:
         self.state.seen_raise_statement[-1] = True
@@ -204,35 +218,47 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         seen_return = self.state.seen_return_statement.pop()
         seen_raise = self.state.seen_raise_statement.pop()
         seen_yield = self.state.seen_yield.pop()
-        if original_node.returns is None:
-            if (
-                self.state.none_return
-                and not seen_raise
-                and not seen_return
-                and not seen_yield
-            ):
+        return_types = self.state.seen_return_types.pop()
+        if original_node.returns is not None:
+            return updated_node
+
+        name = original_node.name.value
+        if self.state.annotate_magics:
+            if name in SIMPLE_MAGICS:
                 return updated_node.with_changes(
-                    returns=libcst.Annotation(annotation=libcst.Name(value="None"))
+                    returns=libcst.Annotation(
+                        annotation=libcst.Name(value=SIMPLE_MAGICS[name])
+                    )
                 )
-            name = original_node.name.value
-            if self.state.annotate_magics:
-                if name in SIMPLE_MAGICS:
-                    return updated_node.with_changes(
-                        returns=libcst.Annotation(
-                            annotation=libcst.Name(value=SIMPLE_MAGICS[name])
-                        )
+        if self.state.annotate_imprecise_magics:
+            if name in IMPRECISE_MAGICS:
+                module, imported_name = IMPRECISE_MAGICS[name]
+                AddImportsVisitor.add_needed_import(self.context, module, imported_name)
+                return updated_node.with_changes(
+                    returns=libcst.Annotation(
+                        annotation=libcst.Name(value=imported_name)
                     )
-            if self.state.annotate_imprecise_magics:
-                if name in IMPRECISE_MAGICS:
-                    module, imported_name = IMPRECISE_MAGICS[name]
-                    AddImportsVisitor.add_needed_import(
-                        self.context, module, imported_name
+                )
+
+        if (
+            self.state.none_return
+            and not seen_raise
+            and not seen_return
+            and not seen_yield
+        ):
+            return updated_node.with_changes(
+                returns=libcst.Annotation(annotation=libcst.Name(value="None"))
+            )
+
+        if self.state.scalar_return and not seen_yield and len(return_types) == 1:
+            return_type = next(iter(return_types))
+            if return_type in {bool, int, float, str, bytes}:
+                return updated_node.with_changes(
+                    returns=libcst.Annotation(
+                        annotation=libcst.Name(value=return_type.__name__)
                     )
-                    return updated_node.with_changes(
-                        returns=libcst.Annotation(
-                            annotation=libcst.Name(value=imported_name)
-                        )
-                    )
+                )
+
         return updated_node
 
     def leave_Param(
@@ -287,6 +313,11 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
 
 
 def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
+    """Very simple type inference for expressions.
+
+    Return None if the type cannot be inferred.
+
+    """
     if isinstance(expr, libcst.Float):
         return float
     elif isinstance(expr, libcst.Integer):
