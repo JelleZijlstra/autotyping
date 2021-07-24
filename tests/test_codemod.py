@@ -165,6 +165,38 @@ class TestAutotype(CodemodTest):
         """
         self.assertCodemod(before, after, annotate_magics=True)
 
+    def test_exit(self) -> None:
+        before = """
+            def __exit__(self, typ, value, tb):
+                pass
+
+            def __aexit__(self, typ, value, tb):
+                pass
+
+            def __exit__(self, *args):
+                pass
+
+            def __exit__(self, a, b, c, d):
+                pass
+        """
+        after = """
+            from types import TracebackType
+            from typing import Optional, Type
+
+            def __exit__(self, typ: Optional[Type[BaseException]], value: Optional[BaseException], tb: Optional[TracebackType]):
+                pass
+
+            def __aexit__(self, typ: Optional[Type[BaseException]], value: Optional[BaseException], tb: Optional[TracebackType]):
+                pass
+
+            def __exit__(self, *args):
+                pass
+
+            def __exit__(self, a, b, c, d):
+                pass
+        """
+        self.assertCodemod(before, after, annotate_magics=True)
+
     def test_annotate_imprecise_magics(self) -> None:
         before = """
             def __iter__():
