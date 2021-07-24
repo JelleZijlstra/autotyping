@@ -20,7 +20,7 @@ more transformations. The following are supported:
   - `--none-return`: add a `-> None` return type to functions without any
     return, yield, or raise in their body
   - `--scalar-return`: add a return annotation to functions that only return
-    literal bool, str, bytes, int, or float object.
+    literal bool, str, bytes, int, or float objects.
 - Annotationg parameter types:
   - `--bool-param`: add a `: bool` annotation to any function
     parameter with a default of `True` or `False`
