@@ -76,6 +76,41 @@ class TestAutotype(CodemodTest):
         """
         self.assertCodemod(before, after, scalar_return=True)
 
+    def test_asynq_return(self) -> None:
+        before = """
+            from asynq import asynq
+
+            @asynq()
+            def ret_none():
+                yield bar.asynq()
+
+            @asynq()
+            def ret_int():
+                yield bar.asynq()
+                return 3
+
+            @asink()
+            def not_asynq():
+                yield bar.asynq()
+        """
+        after = """
+            from asynq import asynq
+
+            @asynq()
+            def ret_none() -> None:
+                yield bar.asynq()
+
+            @asynq()
+            def ret_int() -> int:
+                yield bar.asynq()
+                return 3
+
+            @asink()
+            def not_asynq():
+                yield bar.asynq()
+        """
+        self.assertCodemod(before, after, scalar_return=True, none_return=True)
+
     def test_bool_param(self) -> None:
         before = """
             def foo(x = False, y = 0, z: int = False):
