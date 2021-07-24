@@ -1,6 +1,6 @@
 import argparse
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Set, Type
 
 import libcst
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
@@ -27,7 +27,7 @@ class State:
     annotate_magics: bool
     annotate_imprecise_magics: bool
     none_return: bool
-    bool_param: bool
+    param_types: Set[Type[object]]
     seen_return_statement: List[bool] = field(default_factory=lambda: [False])
     seen_raise_statement: List[bool] = field(default_factory=lambda: [False])
     seen_yield: List[bool] = field(default_factory=lambda: [False])
@@ -95,6 +95,34 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             ),
         )
         arg_parser.add_argument(
+            "--int-param",
+            action="store_true",
+            default=False,
+            help=("Automatically add int annotation to parameters with an int default"),
+        )
+        arg_parser.add_argument(
+            "--float-param",
+            action="store_true",
+            default=False,
+            help=(
+                "Automatically add float annotation to parameters with a float default"
+            ),
+        )
+        arg_parser.add_argument(
+            "--str-param",
+            action="store_true",
+            default=False,
+            help=("Automatically add str annotation to parameters with a str default"),
+        )
+        arg_parser.add_argument(
+            "--bytes-param",
+            action="store_true",
+            default=False,
+            help=(
+                "Automatically add bytes annotation to parameters with a bytes default"
+            ),
+        )
+        arg_parser.add_argument(
             "--annotate-magics",
             action="store_true",
             default=False,
@@ -104,20 +132,35 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             "--annotate-imprecise-magics",
             action="store_true",
             default=False,
-            help="Add annotations to magic methods that are less precise (e.g., Iterable for __iter__)",
+            help=(
+                "Add annotations to magic methods that are less precise (e.g., Iterable "
+                "for __iter__)"
+            ),
         )
 
     def __init__(
         self,
         context: CodemodContext,
+        *,
         annotate_optional: Optional[Sequence[str]] = None,
         annotate_named_param: Optional[Sequence[str]] = None,
         annotate_magics: bool = False,
         annotate_imprecise_magics: bool = False,
         none_return: bool = False,
         bool_param: bool = False,
+        str_param: bool = False,
+        bytes_param: bool = False,
+        float_param: bool = False,
+        int_param: bool = False,
     ) -> None:
         super().__init__(context)
+        param_type_pairs = [
+            (bool_param, bool),
+            (str_param, str),
+            (bytes_param, bytes),
+            (int_param, int),
+            (float_param, float),
+        ]
         self.state = State(
             annotate_optionals=[NamedParam.make(s) for s in annotate_optional]
             if annotate_optional
@@ -126,7 +169,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             if annotate_named_param
             else [],
             none_return=none_return,
-            bool_param=bool_param,
+            param_types={typ for param, typ in param_type_pairs if param},
             annotate_magics=annotate_magics,
             annotate_imprecise_magics=annotate_imprecise_magics,
         )
@@ -200,15 +243,15 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             return updated_node
         if original_node.annotation is not None:
             return updated_node
-        if (
-            self.state.bool_param
-            and original_node.default is not None
-            and isinstance(original_node.default, libcst.Name)
-            and original_node.default.value in ("True", "False")
-        ):
-            return updated_node.with_changes(
-                annotation=libcst.Annotation(annotation=libcst.Name(value="bool"))
-            )
+        if original_node.default is not None:
+            default_type = type_of_expression(original_node.default)
+            if default_type in self.state.param_types:
+                return updated_node.with_changes(
+                    annotation=libcst.Annotation(
+                        annotation=libcst.Name(value=default_type.__name__)
+                    )
+                )
+
         default_is_none = (
             original_node.default is not None
             and isinstance(original_node.default, libcst.Name)
@@ -241,3 +284,30 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         else:
             anno = type_name
         return updated_node.with_changes(annotation=libcst.Annotation(annotation=anno))
+
+
+def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
+    if isinstance(expr, libcst.Float):
+        return float
+    elif isinstance(expr, libcst.Integer):
+        return int
+    elif isinstance(expr, libcst.Imaginary):
+        return complex
+    elif isinstance(expr, libcst.FormattedString):
+        return str  # f-strings can only be str, not bytes
+    elif isinstance(expr, libcst.SimpleString):
+        if "b" in expr.prefix:
+            return bytes
+        else:
+            return str
+    elif isinstance(expr, libcst.ConcatenatedString):
+        left = type_of_expression(expr.left)
+        right = type_of_expression(expr.right)
+        if left == right:
+            return left
+        else:
+            return None
+    elif isinstance(expr, libcst.Name) and expr.value in ("True", "False"):
+        return bool
+    else:
+        return None

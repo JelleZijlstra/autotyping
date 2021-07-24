@@ -56,6 +56,24 @@ class TestAutotype(CodemodTest):
         """
         self.assertCodemod(before, after, bool_param=True)
 
+    def test_typed_params(self) -> None:
+        before = """
+            def foo(x=0, y=0.0, z=f"x", alpha="", beta="b" "a", gamma=b"a"):
+                pass
+        """
+        after = """
+            def foo(x: int=0, y: float=0.0, z: str=f"x", alpha: str="", beta: str="b" "a", gamma: bytes=b"a"):
+                pass
+        """
+        self.assertCodemod(
+            before,
+            after,
+            str_param=True,
+            bytes_param=True,
+            float_param=True,
+            int_param=True,
+        )
+
     def test_annotate_optional(self) -> None:
         before = """
             def foo(uid=None, qid=None):
