@@ -67,3 +67,9 @@ Things to add:
 
 - Infer `-> bool` as the return type if all return statements are
   boolean expressions like `==`.
+
+# Changelog
+
+21.12.0 (December 21, 2021)
+
+- Initial PyPI release
