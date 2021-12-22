@@ -66,6 +66,9 @@ more transformations. The following are supported:
   - `--pyanalyze-report`: takes types suggested by
     [pyanalyze](https://github.com/quora/pyanalyze)'s `suggested_parameter_type`
     and `suggested_return_type` codes and applies them.
+  - `--only-without-imports`: only apply pyanalyze suggestions that do not require
+    new imports. This is useful because suggestions that require imports may need
+    more manual work.
 
 Things to add:
 
