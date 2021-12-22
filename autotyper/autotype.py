@@ -30,7 +30,9 @@ class State:
     scalar_return: bool
     param_types: Set[Type[object]]
     seen_return_statement: List[bool] = field(default_factory=lambda: [False])
-    seen_return_types: List[Set[Type[object]]] = field(default_factory=lambda: [set()])
+    seen_return_types: List[Set[Optional[Type[object]]]] = field(
+        default_factory=lambda: [set()]
+    )
     seen_raise_statement: List[bool] = field(default_factory=lambda: [False])
     seen_yield: List[bool] = field(default_factory=lambda: [False])
     in_lambda: bool = False
@@ -184,26 +186,26 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             annotate_imprecise_magics=annotate_imprecise_magics,
         )
 
-    def visit_FunctionDef(self, node: libcst.FunctionDef) -> Optional[bool]:
+    def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
         self.state.seen_return_statement.append(False)
         self.state.seen_raise_statement.append(False)
         self.state.seen_yield.append(False)
         self.state.seen_return_types.append(set())
 
-    def visit_Return(self, node: libcst.Return) -> Optional[bool]:
+    def visit_Return(self, node: libcst.Return) -> None:
         if node.value is not None:
             self.state.seen_return_statement[-1] = True
             self.state.seen_return_types[-1].add(type_of_expression(node.value))
         else:
             self.state.seen_return_types[-1].add(None)
 
-    def visit_Raise(self, node: libcst.Raise) -> Optional[bool]:
+    def visit_Raise(self, node: libcst.Raise) -> None:
         self.state.seen_raise_statement[-1] = True
 
-    def visit_Yield(self, node: libcst.Yield) -> Optional[bool]:
+    def visit_Yield(self, node: libcst.Yield) -> None:
         self.state.seen_yield[-1] = True
 
-    def visit_Lambda(self, node: libcst.Lambda) -> Optional[bool]:
+    def visit_Lambda(self, node: libcst.Lambda) -> None:
         self.state.in_lambda = True
 
     def leave_Lambda(
@@ -359,7 +361,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             return updated_node
         if original_node.default is not None:
             default_type = type_of_expression(original_node.default)
-            if default_type in self.state.param_types:
+            if default_type is not None and default_type in self.state.param_types:
                 return updated_node.with_changes(
                     annotation=libcst.Annotation(
                         annotation=libcst.Name(value=default_type.__name__)
@@ -385,7 +387,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
 
     def _annotate_param(
         self, param: NamedParam, updated_node: libcst.Param, optional: bool = False
-    ) -> None:
+    ) -> libcst.Param:
         AddImportsVisitor.add_needed_import(self.context, param.module, param.type_name)
         if optional:
             AddImportsVisitor.add_needed_import(self.context, "typing", "Optional")
