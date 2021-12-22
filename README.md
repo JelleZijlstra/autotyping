@@ -62,6 +62,10 @@ more transformations. The following are supported:
     These annotations should have a generic parameter to indicate what
     you're iterating over, but that's too hard for autotyping to figure
     out.
+- External integrations
+  - `--pyanalyze-report`: takes types suggested by
+    [pyanalyze](https://github.com/quora/pyanalyze)'s `suggested_parameter_type`
+    and `suggested_return_type` codes and applies them.
 
 Things to add:
 
@@ -69,6 +73,10 @@ Things to add:
   boolean expressions like `==`.
 
 # Changelog
+
+Unreleased
+
+- Add `--pyanalyze-report`
 
 21.12.0 (December 21, 2021)
 

@@ -1,10 +1,13 @@
 import argparse
 from dataclasses import dataclass, field
-from typing import List, Optional, Sequence, Set, Type
+import json
+from typing import Dict, List, Optional, Sequence, Set, Tuple, Type
+from typing_extensions import TypedDict
 
 import libcst
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
+from libcst.metadata import PositionProvider
 
 
 @dataclass
@@ -24,6 +27,11 @@ class NamedParam:
         return NamedParam(name, module, type_name)
 
 
+class PyanalyzeSuggestion(TypedDict):
+    suggested_type: str
+    imports: List[str]
+
+
 @dataclass
 class State:
     annotate_optionals: List[NamedParam]
@@ -40,6 +48,9 @@ class State:
     seen_raise_statement: List[bool] = field(default_factory=lambda: [False])
     seen_yield: List[bool] = field(default_factory=lambda: [False])
     in_lambda: bool = False
+    pyanalyze_suggestions: Dict[Tuple[str, int, int], PyanalyzeSuggestion] = field(
+        default_factory=dict
+    )
 
 
 SIMPLE_MAGICS = {
@@ -68,6 +79,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
 
     # Add a description so that future codemodders can see what this does.
     DESCRIPTION: str = "Automatically adds simple type annotations."
+    METADATA_DEPENDENCIES = (PositionProvider,)
 
     @staticmethod
     def add_args(arg_parser: argparse.ArgumentParser) -> None:
@@ -151,6 +163,12 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
                 "for __iter__)"
             ),
         )
+        arg_parser.add_argument(
+            "--pyanalyze-report",
+            type=str,
+            default=None,
+            help="Path to a pyanalyze --json-report file to use for suggested types.",
+        )
 
     def __init__(
         self,
@@ -167,6 +185,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         bytes_param: bool = False,
         float_param: bool = False,
         int_param: bool = False,
+        pyanalyze_report: Optional[str] = None,
     ) -> None:
         super().__init__(context)
         param_type_pairs = [
@@ -176,6 +195,30 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             (int_param, int),
             (float_param, float),
         ]
+        pyanalyze_suggestions = {}
+        if pyanalyze_report is not None:
+            with open(pyanalyze_report) as f:
+                data = json.load(f)
+            for failure in data:
+                if "lineno" not in failure or "col_offset" not in failure:
+                    continue
+                metadata = failure.get("extra_metadata")
+                if not metadata:
+                    continue
+                if "suggested_type" not in metadata or "imports" not in metadata:
+                    continue
+                if failure.get("code") not in (
+                    "suggested_parameter_type",
+                    "suggested_return_type",
+                ):
+                    continue
+                pyanalyze_suggestions[
+                    (
+                        failure["absolute_filename"],
+                        failure["lineno"],
+                        failure["col_offset"],
+                    )
+                ] = metadata
         self.state = State(
             annotate_optionals=[NamedParam.make(s) for s in annotate_optional]
             if annotate_optional
@@ -188,6 +231,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             param_types={typ for param, typ in param_type_pairs if param},
             annotate_magics=annotate_magics,
             annotate_imprecise_magics=annotate_imprecise_magics,
+            pyanalyze_suggestions=pyanalyze_suggestions,
         )
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
@@ -232,6 +276,29 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
 
         if original_node.returns is not None:
             return updated_node
+
+        if self.state.pyanalyze_suggestions and self.context.filename:
+            # Currently pyanalyze gives the lineno of the first decorator
+            # and libcst that of the def.
+            # TODO I think the AST behavior changed in later Python versions.
+            if original_node.decorators:
+                lineno_node = original_node.decorators[0]
+            else:
+                lineno_node = original_node
+            pos = self.get_metadata(PositionProvider, lineno_node).start
+            key = (self.context.filename, pos.line, pos.column)
+            suggestion = self.state.pyanalyze_suggestions.get(key)
+            if suggestion is not None:
+                for import_line in suggestion["imports"]:
+                    if "." in import_line:
+                        AddImportsVisitor.add_needed_import(self.context, import_line)
+                    else:
+                        mod, name = import_line.rsplit(".", maxsplit=1)
+                        AddImportsVisitor.add_needed_import(self.context, mod, name)
+                annotation = libcst.Annotation(
+                    annotation=libcst.parse_expression(suggestion["suggested_type"])
+                )
+                return updated_node.with_changes(returns=annotation)
 
         if self.state.annotate_magics:
             if name in SIMPLE_MAGICS:
@@ -363,6 +430,22 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             return updated_node
         if original_node.annotation is not None:
             return updated_node
+        if self.state.pyanalyze_suggestions and self.context.filename:
+            pos = self.get_metadata(PositionProvider, original_node).start
+            key = (self.context.filename, pos.line, pos.column)
+            suggestion = self.state.pyanalyze_suggestions.get(key)
+            if suggestion is not None:
+                for import_line in suggestion["imports"]:
+                    if "." in import_line:
+                        AddImportsVisitor.add_needed_import(self.context, import_line)
+                    else:
+                        mod, name = import_line.rsplit(".", maxsplit=1)
+                        AddImportsVisitor.add_needed_import(self.context, mod, name)
+                annotation = libcst.Annotation(
+                    annotation=libcst.parse_expression(suggestion["suggested_type"])
+                )
+                return updated_node.with_changes(annotation=annotation)
+
         if original_node.default is not None:
             default_type = type_of_expression(original_node.default)
             if default_type is not None and default_type in self.state.param_types:
