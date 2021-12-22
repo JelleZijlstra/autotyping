@@ -49,6 +49,9 @@ class TestAutotype(CodemodTest):
             def bar():
                 return 1
 
+            def formatter(x):
+                return "{}".format(x)
+
             def baz() -> float:
                 return "not a float"
 
@@ -64,6 +67,9 @@ class TestAutotype(CodemodTest):
 
             def bar() -> int:
                 return 1
+
+            def formatter(x) -> str:
+                return "{}".format(x)
 
             def baz() -> float:
                 return "not a float"
