@@ -6,6 +6,7 @@ setup(
     version="21.12.0",
     description="A tool for autoadding simple type annotations.",
     long_description=Path("README.md").read_text(),
+    long_description_content_type="text/markdown",
     keywords="typing annotations",
     author="Jelle Zijlstra",
     author_email="jelle.zijlstra@gmail.com",
