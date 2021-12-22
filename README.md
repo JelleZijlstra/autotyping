@@ -23,7 +23,7 @@ more transformations. The following are supported:
     return, yield, or raise in their body
   - `--scalar-return`: add a return annotation to functions that only return
     literal bool, str, bytes, int, or float objects.
-- Annotationg parameter types:
+- Annotating parameter types:
   - `--bool-param`: add a `: bool` annotation to any function
     parameter with a default of `True` or `False`
   - `--int-param`, `--float-param`, `--str-param`, `--bytes-param`: add
