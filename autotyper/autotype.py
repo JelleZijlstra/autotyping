@@ -428,6 +428,13 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
             return None
     elif isinstance(expr, libcst.Name) and expr.value in ("True", "False"):
         return bool
+    elif (
+        isinstance(expr, libcst.Call)
+        and isinstance(expr.func, libcst.Attribute)
+        and isinstance(expr.func.value, libcst.BaseString)
+        and expr.func.attr.value in ("format", "lower", "upper", "title")
+    ):
+        return str
     else:
         return None
 
