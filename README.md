@@ -1,6 +1,6 @@
 When I refactor code I often find myself tediously adding type
 annotations that are obvious from context: functions that don't
-return anything, boolean flags, etcetera. That's where autotyper
+return anything, boolean flags, etcetera. That's where autotyping
 comes in: it automatically adds those types and inserts the right
 annotations.
 
@@ -10,8 +10,8 @@ for more information on how to use codemods.
 
 Here's how I use it:
 
-- Go to the autotype directory
-- Run `python3 -m libcst.tool codemod autotype.AutotypeCommand /path/to/my/code`
+- Go to the autotyping directory
+- Run `python3 -m libcst.tool codemod autotyping.AutotypeCommand /path/to/my/code`
 
 By default it does nothing; you have to add flags to make it do
 more transformations. The following are supported:
@@ -58,7 +58,7 @@ more transformations. The following are supported:
     some additional magic methods. Currently this adds `typing.Iterator`
     return annotations to `__iter__`, `__await__`, and `__reversed__`.
     These annotations should have a generic parameter to indicate what
-    you're iterating over, but that's too hard for autotyper to figure
+    you're iterating over, but that's too hard for autotyping to figure
     out.
 
 Things to add:

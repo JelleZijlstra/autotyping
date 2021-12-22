@@ -1,4 +1,4 @@
-name: autotyper
+name: autotyping
 
 on:
   - push
