@@ -406,7 +406,6 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
     Return None if the type cannot be inferred.
 
     """
-    print(expr)
     if isinstance(expr, libcst.Float):
         return float
     elif isinstance(expr, libcst.Integer):
