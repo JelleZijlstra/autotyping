@@ -10,13 +10,17 @@ from libcst.codemod.visitors import AddImportsVisitor
 @dataclass
 class NamedParam:
     name: str
-    module: str
+    module: Optional[str]
     type_name: str
 
     @classmethod
     def make(cls, input: str) -> "NamedParam":
         name, type_path = input.split(":")
-        module, type_name = type_path.rsplit(".", maxsplit=1)
+        if "." in type_path:
+            module, type_name = type_path.rsplit(".", maxsplit=1)
+        else:
+            module = None
+            type_name = type_path
         return NamedParam(name, module, type_name)
 
 
@@ -388,7 +392,10 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
     def _annotate_param(
         self, param: NamedParam, updated_node: libcst.Param, optional: bool = False
     ) -> libcst.Param:
-        AddImportsVisitor.add_needed_import(self.context, param.module, param.type_name)
+        if param.module is not None:
+            AddImportsVisitor.add_needed_import(
+                self.context, param.module, param.type_name
+            )
         if optional:
             AddImportsVisitor.add_needed_import(self.context, "typing", "Optional")
         type_name = libcst.Name(value=param.type_name)

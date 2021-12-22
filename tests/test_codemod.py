@@ -170,6 +170,25 @@ class TestAutotype(CodemodTest):
         """
         self.assertCodemod(before, after, annotate_optional=["uid:my_types.Uid"])
 
+    def test_annotate_optional_with_builtin(self) -> None:
+        before = """
+            def foo(number=None):
+                pass
+
+            def bar(number):
+                pass
+        """
+        after = """
+            from typing import Optional
+
+            def foo(number: Optional[int]=None):
+                pass
+
+            def bar(number):
+                pass
+        """
+        self.assertCodemod(before, after, annotate_optional=["number:int"])
+
     def test_annotate_named_param(self) -> None:
         before = """
             def foo(uid, qid):
