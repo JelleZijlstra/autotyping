@@ -2,17 +2,17 @@ from pathlib import Path
 from setuptools import setup
 
 setup(
-    name="autotyper",
+    name="autotyping",
     version="0.0.1",
     description="A tool for autoadding simple type annotations.",
     long_description=Path("README.md").read_text(),
     keywords="typing annotations",
     author="Jelle Zijlstra",
     author_email="jelle.zijlstra@gmail.com",
-    url="https://github.com/JelleZijlstra/autotyper",
-    project_urls={"Bug Tracker": "https://github.com/JelleZijlstra/autotyper/issues"},
+    url="https://github.com/JelleZijlstra/autotyping",
+    project_urls={"Bug Tracker": "https://github.com/JelleZijlstra/autotyping/issues"},
     license="MIT",
-    packages=["autotyper"],
+    packages=["autotyping"],
     install_requires=["libcst"],
     classifiers=[
         "Development Status :: 3 - Alpha",

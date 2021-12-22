@@ -1,5 +1,5 @@
 from libcst.codemod import CodemodTest
-from autotyper.autotype import AutotypeCommand
+from autotyping.autotyping import AutotypeCommand
 
 
 class TestAutotype(CodemodTest):
