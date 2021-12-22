@@ -8,10 +8,12 @@ It is built as a LibCST codemod; see the
 [LibCST documentation](https://libcst.readthedocs.io/en/latest/codemods_tutorial.html)
 for more information on how to use codemods.
 
-Here's how I use it:
+Here's how to use it:
 
-- Go to the autotyping directory
-- Run `python3 -m libcst.tool codemod autotyping.AutotypeCommand /path/to/my/code`
+- `pip install autotyping`
+- Make sure you have a `.libcst.codemod.yaml` with `'autotyper'` in the `modules` list.
+  For an example, see the `.libcst.codemod.yaml` in this repo.
+- Run `python -m libcst.tool codemod autotyping.AutotypeCommand /path/to/my/code`
 
 By default it does nothing; you have to add flags to make it do
 more transformations. The following are supported:
