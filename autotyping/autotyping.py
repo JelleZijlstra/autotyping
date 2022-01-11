@@ -51,6 +51,7 @@ class State:
     pyanalyze_suggestions: Dict[Tuple[str, int, int], PyanalyzeSuggestion] = field(
         default_factory=dict
     )
+    only_without_imports: bool = False
 
 
 SIMPLE_MAGICS = {
@@ -169,6 +170,12 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             default=None,
             help="Path to a pyanalyze --json-report file to use for suggested types.",
         )
+        arg_parser.add_argument(
+            "--only-without-imports",
+            action="store_true",
+            default=False,
+            help="Only apply pyanalyze suggestions that do not require imports",
+        )
 
     def __init__(
         self,
@@ -186,6 +193,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         float_param: bool = False,
         int_param: bool = False,
         pyanalyze_report: Optional[str] = None,
+        only_without_imports: bool = False,
     ) -> None:
         super().__init__(context)
         param_type_pairs = [
@@ -232,6 +240,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             annotate_magics=annotate_magics,
             annotate_imprecise_magics=annotate_imprecise_magics,
             pyanalyze_suggestions=pyanalyze_suggestions,
+            only_without_imports=only_without_imports,
         )
 
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
@@ -288,7 +297,9 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             pos = self.get_metadata(PositionProvider, lineno_node).start
             key = (self.context.filename, pos.line, pos.column)
             suggestion = self.state.pyanalyze_suggestions.get(key)
-            if suggestion is not None:
+            if suggestion is not None and not (
+                suggestion["imports"] and self.state.only_without_imports
+            ):
                 for import_line in suggestion["imports"]:
                     if "." not in import_line:
                         AddImportsVisitor.add_needed_import(self.context, import_line)
@@ -434,7 +445,9 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             pos = self.get_metadata(PositionProvider, original_node).start
             key = (self.context.filename, pos.line, pos.column)
             suggestion = self.state.pyanalyze_suggestions.get(key)
-            if suggestion is not None:
+            if suggestion is not None and not (
+                suggestion["imports"] and self.state.only_without_imports
+            ):
                 for import_line in suggestion["imports"]:
                     if "." in import_line:
                         AddImportsVisitor.add_needed_import(self.context, import_line)
