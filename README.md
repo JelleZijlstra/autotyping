@@ -11,7 +11,7 @@ for more information on how to use codemods.
 Here's how to use it:
 
 - `pip install autotyping`
-- Make sure you have a `.libcst.codemod.yaml` with `'autotyper'` in the `modules` list.
+- Make sure you have a `.libcst.codemod.yaml` with `'autotyping'` in the `modules` list.
   For an example, see the `.libcst.codemod.yaml` in this repo.
 - Run `python -m libcst.tool codemod autotyping.AutotypeCommand /path/to/my/code`
 
