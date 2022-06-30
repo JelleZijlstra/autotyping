@@ -75,7 +75,7 @@ IMPRECISE_MAGICS = {
     "__await__": ("typing", "Iterator"),
 }
 
-# Some methods of str type that have unique enough names.
+# Some methods of str mapped to their return types.
 STR_STR_METHODS = frozenset({
     'capitalize',
     'casefold',
