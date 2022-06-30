@@ -52,6 +52,12 @@ class TestAutotype(CodemodTest):
             def formatter(x):
                 return "{}".format(x)
 
+            def return_not(x):
+                return not x
+
+            def return_is(x):
+                return x is object()
+
             def baz() -> float:
                 return "not a float"
 
@@ -70,6 +76,12 @@ class TestAutotype(CodemodTest):
 
             def formatter(x) -> str:
                 return "{}".format(x)
+
+            def return_not(x) -> bool:
+                return not x
+
+            def return_is(x) -> bool:
+                return x is object()
 
             def baz() -> float:
                 return "not a float"

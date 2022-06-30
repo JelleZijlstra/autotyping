@@ -538,6 +538,12 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
         return None
     if isinstance(expr, libcst.Name) and expr.value in ("True", "False"):
         return bool
+    if isinstance(expr, libcst.UnaryOperation) and isinstance(expr.operator, libcst.Not):
+        return bool
+    if isinstance(expr, libcst.Comparison):
+        operator = expr.comparisons[0].operator
+        if isinstance(operator, libcst.Is):
+            return bool
     method = get_method_name(expr)
     if method in STR_METHODS:
         return str
