@@ -58,6 +58,9 @@ class TestAutotype(CodemodTest):
             def return_is(x):
                 return x is object()
 
+            def return_endswith(x):
+                return 'file.exe'.endswith(x)
+
             def baz() -> float:
                 return "not a float"
 
@@ -82,6 +85,9 @@ class TestAutotype(CodemodTest):
 
             def return_is(x) -> bool:
                 return x is object()
+
+            def return_endswith(x) -> bool:
+                return 'file.exe'.endswith(x)
 
             def baz() -> float:
                 return "not a float"

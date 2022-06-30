@@ -74,11 +74,41 @@ IMPRECISE_MAGICS = {
     "__reversed__": ("typing", "Iterator"),
     "__await__": ("typing", "Iterator"),
 }
-STR_METHODS = frozenset({
-    "format",
-    "lower",
-    "upper",
-    "title",
+
+# Some methods of str type that have unique enough names.
+STR_STR_METHODS = frozenset({
+    'capitalize',
+    'casefold',
+    'format',
+    'ljust',
+    'lower',
+    'lstrip',
+    'partition',
+    'removeprefix',
+    'removesuffix',
+    'rjust',
+    'rpartition',
+    'rstrip',
+    'strip',
+    'swapcase',
+    'title',
+    'upper',
+})
+STR_BOOL_METHODS = frozenset({
+    'endswith',
+    'isalnum',
+    'isalpha',
+    'isascii',
+    'isdecimal',
+    'isdigit',
+    'isidentifier',
+    'islower',
+    'isnumeric',
+    'isprintable',
+    'isspace',
+    'istitle',
+    'isupper',
+    'startswith',
 })
 
 
@@ -544,14 +574,16 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
         operator = expr.comparisons[0].operator
         if isinstance(operator, libcst.Is):
             return bool
-    method = get_method_name(expr)
-    if method in STR_METHODS:
+    method = get_str_method_name(expr)
+    if method in STR_STR_METHODS:
         return str
+    if method in STR_BOOL_METHODS:
+        return bool
     return None
 
 
-def get_method_name(expr: libcst.BaseExpression) -> Optional[str]:
-    """If the expression is a calling of a method, return the method name.
+def get_str_method_name(expr: libcst.BaseExpression) -> Optional[str]:
+    """If the expression is a calling of an str method, return the method name.
     """
     if not isinstance(expr, libcst.Call):
         return None
