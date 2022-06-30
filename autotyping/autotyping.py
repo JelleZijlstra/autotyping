@@ -76,40 +76,44 @@ IMPRECISE_MAGICS = {
 }
 
 # Some methods of str mapped to their return types.
-STR_STR_METHODS = frozenset({
-    'capitalize',
-    'casefold',
-    'format',
-    'ljust',
-    'lower',
-    'lstrip',
-    'partition',
-    'removeprefix',
-    'removesuffix',
-    'rjust',
-    'rpartition',
-    'rstrip',
-    'strip',
-    'swapcase',
-    'title',
-    'upper',
-})
-STR_BOOL_METHODS = frozenset({
-    'endswith',
-    'isalnum',
-    'isalpha',
-    'isascii',
-    'isdecimal',
-    'isdigit',
-    'isidentifier',
-    'islower',
-    'isnumeric',
-    'isprintable',
-    'isspace',
-    'istitle',
-    'isupper',
-    'startswith',
-})
+STR_STR_METHODS = frozenset(
+    {
+        "capitalize",
+        "casefold",
+        "format",
+        "ljust",
+        "lower",
+        "lstrip",
+        "partition",
+        "removeprefix",
+        "removesuffix",
+        "rjust",
+        "rpartition",
+        "rstrip",
+        "strip",
+        "swapcase",
+        "title",
+        "upper",
+    }
+)
+STR_BOOL_METHODS = frozenset(
+    {
+        "endswith",
+        "isalnum",
+        "isalpha",
+        "isascii",
+        "isdecimal",
+        "isdigit",
+        "isidentifier",
+        "islower",
+        "isnumeric",
+        "isprintable",
+        "isspace",
+        "istitle",
+        "isupper",
+        "startswith",
+    }
+)
 
 
 class AutotypeCommand(VisitorBasedCodemodCommand):
@@ -568,7 +572,9 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
         return None
     if isinstance(expr, libcst.Name) and expr.value in ("True", "False"):
         return bool
-    if isinstance(expr, libcst.UnaryOperation) and isinstance(expr.operator, libcst.Not):
+    if isinstance(expr, libcst.UnaryOperation) and isinstance(
+        expr.operator, libcst.Not
+    ):
         return bool
     if isinstance(expr, libcst.Comparison):
         operator = expr.comparisons[0].operator
@@ -583,8 +589,7 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
 
 
 def get_str_method_name(expr: libcst.BaseExpression) -> Optional[str]:
-    """If the expression is a calling of an str method, return the method name.
-    """
+    """If the expression is a calling of an str method, return the method name."""
     if not isinstance(expr, libcst.Call):
         return None
     if not isinstance(expr.func, libcst.Attribute):
