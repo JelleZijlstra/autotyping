@@ -74,6 +74,12 @@ IMPRECISE_MAGICS = {
     "__reversed__": ("typing", "Iterator"),
     "__await__": ("typing", "Iterator"),
 }
+STR_METHODS = frozenset({
+    "format",
+    "lower",
+    "upper",
+    "title",
+})
 
 
 class AutotypeCommand(VisitorBasedCodemodCommand):
@@ -495,6 +501,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         if optional:
             AddImportsVisitor.add_needed_import(self.context, "typing", "Optional")
         type_name = libcst.Name(value=param.type_name)
+        anno: libcst.BaseExpression
         if optional:
             anno = libcst.Subscript(
                 value=libcst.Name(value="Optional"),
@@ -513,35 +520,40 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
     """
     if isinstance(expr, libcst.Float):
         return float
-    elif isinstance(expr, libcst.Integer):
+    if isinstance(expr, libcst.Integer):
         return int
-    elif isinstance(expr, libcst.Imaginary):
+    if isinstance(expr, libcst.Imaginary):
         return complex
-    elif isinstance(expr, libcst.FormattedString):
+    if isinstance(expr, libcst.FormattedString):
         return str  # f-strings can only be str, not bytes
-    elif isinstance(expr, libcst.SimpleString):
+    if isinstance(expr, libcst.SimpleString):
         if "b" in expr.prefix:
             return bytes
-        else:
-            return str
-    elif isinstance(expr, libcst.ConcatenatedString):
+        return str
+    if isinstance(expr, libcst.ConcatenatedString):
         left = type_of_expression(expr.left)
         right = type_of_expression(expr.right)
         if left == right:
             return left
-        else:
-            return None
-    elif isinstance(expr, libcst.Name) and expr.value in ("True", "False"):
-        return bool
-    elif (
-        isinstance(expr, libcst.Call)
-        and isinstance(expr.func, libcst.Attribute)
-        and isinstance(expr.func.value, libcst.BaseString)
-        and expr.func.attr.value in ("format", "lower", "upper", "title")
-    ):
-        return str
-    else:
         return None
+    if isinstance(expr, libcst.Name) and expr.value in ("True", "False"):
+        return bool
+    method = get_method_name(expr)
+    if method in STR_METHODS:
+        return str
+    return None
+
+
+def get_method_name(expr: libcst.BaseExpression) -> Optional[str]:
+    """If the expression is a calling of a method, return the method name.
+    """
+    if not isinstance(expr, libcst.Call):
+        return None
+    if not isinstance(expr.func, libcst.Attribute):
+        return None
+    if not isinstance(expr.func.value, libcst.BaseString):
+        return None
+    return expr.func.attr.value
 
 
 def is_asynq_decorator(dec: libcst.Decorator) -> bool:
