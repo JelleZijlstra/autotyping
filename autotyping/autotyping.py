@@ -84,11 +84,10 @@ STR_STR_METHODS = frozenset(
         "ljust",
         "lower",
         "lstrip",
-        "partition",
         "removeprefix",
         "removesuffix",
+        "replace",
         "rjust",
-        "rpartition",
         "rstrip",
         "strip",
         "swapcase",
@@ -576,7 +575,7 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
         expr.operator, libcst.Not
     ):
         return bool
-    if isinstance(expr, libcst.Comparison):
+    if isinstance(expr, libcst.Comparison) and len(expr.comparisons) == 1:
         operator = expr.comparisons[0].operator
         if isinstance(operator, libcst.Is):
             return bool
@@ -594,7 +593,7 @@ def get_str_method_name(expr: libcst.BaseExpression) -> Optional[str]:
         return None
     if not isinstance(expr.func, libcst.Attribute):
         return None
-    if not isinstance(expr.func.value, libcst.BaseString):
+    if not isinstance(expr.func.value, libcst.SimpleString):
         return None
     return expr.func.attr.value
 
