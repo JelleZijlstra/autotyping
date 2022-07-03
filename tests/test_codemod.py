@@ -49,6 +49,9 @@ class TestAutotype(CodemodTest):
             def bar():
                 return 1
 
+            def return_not(x):
+                return not x
+
             def formatter(x):
                 return "{}".format(x)
 
@@ -67,6 +70,9 @@ class TestAutotype(CodemodTest):
 
             def bar() -> int:
                 return 1
+
+            def return_not(x) -> bool:
+                return not x
 
             def formatter(x) -> str:
                 return "{}".format(x)
