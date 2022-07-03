@@ -7,7 +7,10 @@ from typing_extensions import TypedDict
 import libcst
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
-from libcst.metadata import PositionProvider
+from libcst.metadata import CodePosition, CodeRange, PositionProvider
+
+_DEFAULT_POSITION = CodePosition(0, 0)
+_DEFAULT_CODE_RANGE = CodeRange(_DEFAULT_POSITION, _DEFAULT_POSITION)
 
 
 @dataclass
@@ -294,7 +297,9 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
                 lineno_node = original_node.decorators[0]
             else:
                 lineno_node = original_node
-            pos = self.get_metadata(PositionProvider, lineno_node).start
+            pos = self.get_metadata(
+                PositionProvider, lineno_node, _DEFAULT_CODE_RANGE
+            ).start
             key = (self.context.filename, pos.line, pos.column)
             suggestion = self.state.pyanalyze_suggestions.get(key)
             if suggestion is not None and not (
@@ -442,7 +447,9 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         if original_node.annotation is not None:
             return updated_node
         if self.state.pyanalyze_suggestions and self.context.filename:
-            pos = self.get_metadata(PositionProvider, original_node).start
+            pos = self.get_metadata(
+                PositionProvider, original_node, _DEFAULT_CODE_RANGE
+            ).start
             key = (self.context.filename, pos.line, pos.column)
             suggestion = self.state.pyanalyze_suggestions.get(key)
             if suggestion is not None and not (
