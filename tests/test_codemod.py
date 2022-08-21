@@ -28,6 +28,14 @@ class TestAutotype(CodemodTest):
 
             def baz():
                 return
+
+            @abstractmethod
+            def very_abstract():
+                pass
+
+            @abc.abstractmethod
+            def very_abstract_without_import_from():
+                pass
         """
         after = """
             def foo() -> None:
@@ -38,6 +46,14 @@ class TestAutotype(CodemodTest):
 
             def baz() -> None:
                 return
+
+            @abstractmethod
+            def very_abstract():
+                pass
+
+            @abc.abstractmethod
+            def very_abstract_without_import_from():
+                pass
         """
         self.assertCodemod(before, after, none_return=True)
 
