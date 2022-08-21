@@ -91,6 +91,8 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
     DESCRIPTION: str = "Automatically adds simple type annotations."
     METADATA_DEPENDENCIES = (PositionProvider,)
 
+    state: State
+
     @staticmethod
     def add_args(arg_parser: argparse.ArgumentParser) -> None:
         arg_parser.add_argument(
@@ -252,6 +254,10 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             only_without_imports=only_without_imports,
         )
 
+    def is_stub(self) -> bool:
+        filename = self.context.filename
+        return filename is not None and filename.endswith(".pyi")
+
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
         self.state.seen_return_statement.append(False)
         self.state.seen_raise_statement.append(False)
@@ -347,6 +353,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             and not seen_return
             and (is_asynq or not seen_yield)
             and not is_abstractmethod
+            and not self.is_stub()
         ):
             return updated_node.with_changes(
                 returns=libcst.Annotation(annotation=libcst.Name(value="None"))

@@ -1,4 +1,4 @@
-from libcst.codemod import CodemodTest
+from libcst.codemod import CodemodTest, CodemodContext
 from autotyping.autotyping import AutotypeCommand
 
 
@@ -56,6 +56,22 @@ class TestAutotype(CodemodTest):
                 pass
         """
         self.assertCodemod(before, after, none_return=True)
+
+    def test_none_return_stub(self) -> None:
+        before = """
+            def foo():
+                pass
+        """
+        after = """
+            def foo():
+                pass
+        """
+        self.assertCodemod(
+            before,
+            after,
+            none_return=True,
+            context_override=CodemodContext(filename="stub.pyi"),
+        )
 
     def test_scalar_return(self) -> None:
         before = """
