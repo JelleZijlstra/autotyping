@@ -560,6 +560,25 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
         expr.operator, libcst.Not
     ):
         return bool
+    elif isinstance(expr, libcst.BinaryOperation):
+        left = type_of_expression(expr.left)
+        if left in (str, bytes) and isinstance(expr.operator, libcst.Modulo):
+            return left
+        return None
+    elif isinstance(expr, libcst.BooleanOperation):
+        left = type_of_expression(expr.left)
+        right = type_of_expression(expr.right)
+        # For AND and OR, if both types are the same, we can infer that type.
+        if left == right:
+            return left
+        else:
+            return None
+    elif isinstance(expr, libcst.Comparison):
+        types = {type(comp.operator) for comp in expr.comparisons}
+        # Only these are actually guaranteed to return bool
+        if types <= {libcst.In, libcst.Is, libcst.IsNot, libcst.NotIn}:
+            return bool
+        return None
     elif (
         isinstance(expr, libcst.Call)
         and isinstance(expr.func, libcst.Attribute)

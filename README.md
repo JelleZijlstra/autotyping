@@ -82,6 +82,12 @@ Unreleased
 - Add `--pyanalyze-report`
 - Do not add `None` return types to methods marked with `@abstractmethod` and
   to methods in stub files
+- Improve type inference:
+  - `"string" % ...` is always `str`
+  - `b"bytes" % ...` is always `bytes`
+  - An `and` or `or` operator where left and right sides are of the same type
+    returns that type
+  - `is`, `is not`, `in`, and `not in` always return `bool`
 
 21.12.0 (December 21, 2021)
 
