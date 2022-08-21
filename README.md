@@ -80,6 +80,8 @@ Things to add:
 Unreleased
 
 - Add `--pyanalyze-report`
+- Do not add `None` return types to methods marked with `@abstractmethod` and
+  to methods in stub files
 
 21.12.0 (December 21, 2021)
 

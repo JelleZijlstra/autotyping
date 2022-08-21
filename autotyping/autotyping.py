@@ -1,5 +1,6 @@
 import argparse
 from dataclasses import dataclass, field
+import enum
 import json
 from typing import Dict, List, Optional, Sequence, Set, Tuple, Type
 from typing_extensions import TypedDict
@@ -33,6 +34,11 @@ class NamedParam:
 class PyanalyzeSuggestion(TypedDict):
     suggested_type: str
     imports: List[str]
+
+
+class DecoratorKind(enum.Enum):
+    asynq = 1
+    abstractmethod = 2
 
 
 @dataclass
@@ -84,6 +90,8 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
     # Add a description so that future codemodders can see what this does.
     DESCRIPTION: str = "Automatically adds simple type annotations."
     METADATA_DEPENDENCIES = (PositionProvider,)
+
+    state: State
 
     @staticmethod
     def add_args(arg_parser: argparse.ArgumentParser) -> None:
@@ -246,6 +254,10 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             only_without_imports=only_without_imports,
         )
 
+    def is_stub(self) -> bool:
+        filename = self.context.filename
+        return filename is not None and filename.endswith(".pyi")
+
     def visit_FunctionDef(self, node: libcst.FunctionDef) -> None:
         self.state.seen_return_statement.append(False)
         self.state.seen_raise_statement.append(False)
@@ -277,7 +289,9 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
     def leave_FunctionDef(
         self, original_node: libcst.FunctionDef, updated_node: libcst.FunctionDef
     ) -> libcst.CSTNode:
-        is_asynq = any(is_asynq_decorator(dec) for dec in original_node.decorators)
+        kinds = {get_decorator_kind(decorator) for decorator in updated_node.decorators}
+        is_asynq = DecoratorKind.asynq in kinds
+        is_abstractmethod = DecoratorKind.abstractmethod in kinds
         seen_return = self.state.seen_return_statement.pop()
         seen_raise = self.state.seen_raise_statement.pop()
         seen_yield = self.state.seen_yield.pop()
@@ -338,6 +352,8 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             and not seen_raise
             and not seen_return
             and (is_asynq or not seen_yield)
+            and not is_abstractmethod
+            and not self.is_stub()
         ):
             return updated_node.with_changes(
                 returns=libcst.Annotation(annotation=libcst.Name(value="None"))
@@ -555,16 +571,26 @@ def type_of_expression(expr: libcst.BaseExpression) -> Optional[Type[object]]:
         return None
 
 
-def is_asynq_decorator(dec: libcst.Decorator) -> bool:
-    """Is this @asynq()?"""
-    if not isinstance(dec.decorator, libcst.Call):
-        return False
-    call = dec.decorator
-    if not isinstance(call.func, libcst.Name):
-        return False
-    if call.func.value != "asynq":
-        return False
-    if call.args:
-        # @asynq() with custom arguments may do something unexpected
-        return False
-    return True
+def get_decorator_kind(dec: libcst.Decorator) -> Optional[DecoratorKind]:
+    """Is this @asynq() or @abstractmethod?"""
+    if isinstance(dec.decorator, libcst.Call):
+        call = dec.decorator
+        if not isinstance(call.func, libcst.Name):
+            return None
+        if call.func.value != "asynq":
+            return None
+        if call.args:
+            # @asynq() with custom arguments may do something unexpected
+            return None
+        return DecoratorKind.asynq
+    elif isinstance(dec.decorator, libcst.Name):
+        if dec.decorator.value == "abstractmethod":
+            return DecoratorKind.abstractmethod
+    elif isinstance(dec.decorator, libcst.Attribute):
+        if (
+            dec.decorator.attr.value == "abstractmethod"
+            and isinstance(dec.decorator.value, libcst.Name)
+            and dec.decorator.value.value == "abc"
+        ):
+            return DecoratorKind.abstractmethod
+    return None
