@@ -87,6 +87,15 @@ class TestAutotype(CodemodTest):
             def formatter(x):
                 return "{}".format(x)
 
+            def old_school_formatter(x):
+                return "%s" % x
+
+            def bytes_formatter(x):
+                return b"%s" % x
+
+            def boolean_return(x, y, z):
+                return x is y or x in z
+
             def baz() -> float:
                 return "not a float"
 
@@ -108,6 +117,15 @@ class TestAutotype(CodemodTest):
 
             def formatter(x) -> str:
                 return "{}".format(x)
+
+            def old_school_formatter(x) -> str:
+                return "%s" % x
+
+            def bytes_formatter(x) -> bytes:
+                return b"%s" % x
+
+            def boolean_return(x, y, z) -> bool:
+                return x is y or x in z
 
             def baz() -> float:
                 return "not a float"
