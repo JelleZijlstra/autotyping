@@ -81,7 +81,7 @@ There are two shortcut flags to enable multiple transformations at once:
 
 # Changelog
 
-Unreleased
+22.9.0 (September 5, 2022)
 
 - Add `--safe` and `--aggressive`
 - Add `--pyanalyze-report`
