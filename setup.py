@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="autotyping",
-    version="21.12.0",
+    version="22.9.0",
     description="A tool for autoadding simple type annotations.",
     long_description=Path("README.md").read_text(),
     long_description_content_type="text/markdown",
