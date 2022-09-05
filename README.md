@@ -70,15 +70,20 @@ more transformations. The following are supported:
     new imports. This is useful because suggestions that require imports may need
     more manual work.
 
-Things to add:
+There are two shortcut flags to enable multiple transformations at once:
 
-- Infer `-> bool` as the return type if all return statements are
-  boolean expressions like `==`.
+- `--safe` enables changes that should always be safe. This includes
+  `--none-return`, `--scalar-return`, and `--annotate-magics`.
+- `--aggressive` enables riskier changes that are more likely to produce
+  new type checker errors. It includes all of `--safe` as well as `--bool-param`,
+  `--int-param`, `--float-param`, `--str-param`, `--bytes-param`, and
+  `--annotate-imprecise-magics`.
 
 # Changelog
 
 Unreleased
 
+- Add `--safe` and `--aggressive`
 - Add `--pyanalyze-report`
 - Do not add `None` return types to methods marked with `@abstractmethod` and
   to methods in stub files

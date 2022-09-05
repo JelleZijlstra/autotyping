@@ -85,6 +85,36 @@ IMPRECISE_MAGICS = {
 }
 
 
+class _SafeAction(argparse.Action):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: object,
+        option_string: Optional[str] = ...,
+    ) -> None:
+        namespace.none_return = True
+        namespace.scalar_return = True
+        namespace.annotate_magics = True
+
+
+class _AggressiveAction(_SafeAction):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: object,
+        option_string: Optional[str] = ...,
+    ) -> None:
+        super().__call__(parser, namespace, values, option_string)
+        namespace.bool_param = True
+        namespace.int_param = True
+        namespace.float_param = True
+        namespace.str_param = True
+        namespace.bytes_param = True
+        namespace.annotate_imprecise_magics = True
+
+
 class AutotypeCommand(VisitorBasedCodemodCommand):
 
     # Add a description so that future codemodders can see what this does.
@@ -187,6 +217,18 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             default=False,
             help="Only apply pyanalyze suggestions that do not require imports",
         )
+        arg_parser.add_argument(
+            "--safe",
+            action=_SafeAction,
+            help="Apply all safe transformations",
+            nargs="?",
+        )
+        arg_parser.add_argument(
+            "--aggressive",
+            action=_AggressiveAction,
+            help="Apply all transformations that do not require arguments",
+            nargs="?",
+        )
 
     def __init__(
         self,
@@ -205,6 +247,8 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         int_param: bool = False,
         pyanalyze_report: Optional[str] = None,
         only_without_imports: bool = False,
+        safe: bool = False,
+        aggressive: bool = False,
     ) -> None:
         super().__init__(context)
         param_type_pairs = [
