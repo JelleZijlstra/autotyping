@@ -166,7 +166,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             "--int-param",
             action="store_true",
             default=False,
-            help=("Automatically add int annotation to parameters with an int default"),
+            help="Automatically add int annotation to parameters with an int default",
         )
         arg_parser.add_argument(
             "--float-param",
@@ -180,7 +180,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             "--str-param",
             action="store_true",
             default=False,
-            help=("Automatically add str annotation to parameters with a str default"),
+            help="Automatically add str annotation to parameters with a str default",
         )
         arg_parser.add_argument(
             "--bytes-param",
@@ -201,8 +201,8 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             action="store_true",
             default=False,
             help=(
-                "Add annotations to magic methods that are less precise (e.g., Iterable "
-                "for __iter__)"
+                "Add annotations to magic methods that are less precise (e.g., Iterable"
+                " for __iter__)"
             ),
         )
         arg_parser.add_argument(
