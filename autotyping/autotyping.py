@@ -116,7 +116,6 @@ class _AggressiveAction(_SafeAction):
 
 
 class AutotypeCommand(VisitorBasedCodemodCommand):
-
     # Add a description so that future codemodders can see what this does.
     DESCRIPTION: str = "Automatically adds simple type annotations."
     METADATA_DEPENDENCIES = (PositionProvider,)
