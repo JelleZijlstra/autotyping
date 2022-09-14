@@ -65,7 +65,7 @@ more transformations. The following are supported:
 - External integrations
   - `--pyanalyze-report`: takes types suggested by
     [pyanalyze](https://github.com/quora/pyanalyze)'s `suggested_parameter_type`
-    and `suggested_return_type` codes and applies them.
+    and `suggested_return_type` codes and applies them. Run pyanalyze with `python -m pyanalyze --json-output report.json *file or folder*`, then `--pyanalyze-report report.json`.
   - `--only-without-imports`: only apply pyanalyze suggestions that do not require
     new imports. This is useful because suggestions that require imports may need
     more manual work.
