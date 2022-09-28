@@ -9,6 +9,8 @@ exclude = '''
   | \.venv
 )/
 '''
+preview = true
+skip_magic_trailing_comma = true
 
 [build-system]
 requires = [
