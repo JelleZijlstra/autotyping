@@ -515,7 +515,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
                 suggestion["imports"] and self.state.only_without_imports
             ):
                 for import_line in suggestion["imports"]:
-                    if "." in import_line:
+                    if "." not in import_line:
                         AddImportsVisitor.add_needed_import(self.context, import_line)
                     else:
                         mod, name = import_line.rsplit(".", maxsplit=1)
