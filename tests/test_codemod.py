@@ -281,6 +281,23 @@ class TestAutotype(CodemodTest):
         """
         self.assertCodemod(before, after, annotate_magics=True)
 
+    def test_annotate_magics_len(self) -> None:
+        before = """
+            def __len__():
+                pass
+
+            def __length_hint__():
+                pass
+        """
+        after = """
+            def __len__() -> int:
+                pass
+
+            def __length_hint__() -> int:
+                pass
+        """
+        self.assertCodemod(before, after, annotate_magics=True)
+
     def test_exit(self) -> None:
         before = """
             def __exit__(self, typ, value, tb):
