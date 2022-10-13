@@ -43,6 +43,7 @@ more transformations. The following are supported:
     - `__str__` returns `str`
     - `__repr__` returns `str`
     - `__len__` returns `int`
+    - `__length_hint__` returns `int`
     - `__init__` returns `None`
     - `__del__` returns `None`
     - `__bool__` returns `bool`
