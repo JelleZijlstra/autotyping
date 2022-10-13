@@ -67,6 +67,7 @@ SIMPLE_MAGICS = {
     "__str__": "str",
     "__repr__": "str",
     "__len__": "int",
+    "__length_hint__": "int",
     "__init__": "None",
     "__del__": "None",
     "__bool__": "bool",
