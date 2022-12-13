@@ -12,9 +12,11 @@ exclude = '''
 preview = true
 skip_magic_trailing_comma = true
 
+[tool.pyanalyze]
+missing_parameter_annotation = true
+missing_return_annotation = true
+incompatible_override = true
+
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
-]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
