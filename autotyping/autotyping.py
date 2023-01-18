@@ -4,11 +4,14 @@ import enum
 import json
 from typing import Dict, List, Optional, Sequence, Set, Tuple, Type
 from typing_extensions import TypedDict
+import re
 
 import libcst
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
 from libcst.metadata import CodePosition, CodeRange, PositionProvider
+
+from autotyping.guess_type_from_argname import guess_type_from_argname
 
 _DEFAULT_POSITION = CodePosition(0, 0)
 _DEFAULT_CODE_RANGE = CodeRange(_DEFAULT_POSITION, _DEFAULT_POSITION)
@@ -61,6 +64,7 @@ class State:
         default_factory=dict
     )
     only_without_imports: bool = False
+    guess_common_names: bool = False
 
 
 SIMPLE_MAGICS = {
@@ -114,6 +118,7 @@ class _AggressiveAction(_SafeAction):
         namespace.str_param = True
         namespace.bytes_param = True
         namespace.annotate_imprecise_magics = True
+        namespace.guess_common_names = True
 
 
 class AutotypeCommand(VisitorBasedCodemodCommand):
@@ -206,6 +211,12 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             ),
         )
         arg_parser.add_argument(
+            "--guess-common-names",
+            action="store_true",
+            default=False,
+            help="Guess types from argument name",
+        )
+        arg_parser.add_argument(
             "--pyanalyze-report",
             type=str,
             default=None,
@@ -245,6 +256,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         bytes_param: bool = False,
         float_param: bool = False,
         int_param: bool = False,
+        guess_common_names: bool = False,
         pyanalyze_report: Optional[str] = None,
         only_without_imports: bool = False,
         safe: bool = False,
@@ -296,6 +308,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
             annotate_imprecise_magics=annotate_imprecise_magics,
             pyanalyze_suggestions=pyanalyze_suggestions,
             only_without_imports=only_without_imports,
+            guess_common_names=guess_common_names,
         )
 
     def is_stub(self) -> bool:
@@ -504,8 +517,10 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         if self.state.in_lambda:
             # Lambdas can't have annotations
             return updated_node
+        # don't modify if there's already any annotations set
         if original_node.annotation is not None:
             return updated_node
+        # pyanalyze suggestions
         if self.state.pyanalyze_suggestions and self.context.filename:
             pos = self.get_metadata(
                 PositionProvider, original_node, _DEFAULT_CODE_RANGE
@@ -526,6 +541,7 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
                 )
                 return updated_node.with_changes(annotation=annotation)
 
+        # infer from default non-None value
         if original_node.default is not None:
             default_type = type_of_expression(original_node.default)
             if default_type is not None and default_type in self.state.param_types:
@@ -535,40 +551,57 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
                     )
                 )
 
+        parameter_name = original_node.name.value
         default_is_none = (
             original_node.default is not None
             and isinstance(original_node.default, libcst.Name)
             and original_node.default.value == "None"
         )
+        # default value is None, i.e. `def foo(bar=None)`
         if default_is_none:
+            # check if user has explicitly specified a type for this name
             for anno_optional in self.state.annotate_optionals:
-                if original_node.name.value == anno_optional.name:
+                if parameter_name == anno_optional.name:
                     return self._annotate_param(
-                        anno_optional, updated_node, optional=True
+                        anno_optional, updated_node, containers=["Optional"]
                     )
+
+        # no default value, i.e. `def foo(bar)`
         elif original_node.default is None:
+            # check if user has explicitly specified a type for this name
             for anno_named_param in self.state.annotate_named_params:
                 if original_node.name.value == anno_named_param.name:
-                    return self._annotate_param(anno_named_param, updated_node)
+                    return self._annotate_param(anno_named_param, updated_node, [])
+
+        # guess type from name
+        if self.state.guess_common_names:
+            guessed_type, containers = guess_type_from_argname(parameter_name)
+            if guessed_type is not None:
+                if default_is_none:
+                    containers += ["Optional"]
+                return self._annotate_param(
+                    NamedParam("", None, guessed_type), updated_node, containers
+                )
+
         return updated_node
 
     def _annotate_param(
-        self, param: NamedParam, updated_node: libcst.Param, optional: bool = False
+        self, param: NamedParam, updated_node: libcst.Param, containers: List[str]
     ) -> libcst.Param:
         if param.module is not None:
             AddImportsVisitor.add_needed_import(
                 self.context, param.module, param.type_name
             )
-        if optional:
-            AddImportsVisitor.add_needed_import(self.context, "typing", "Optional")
-        type_name = libcst.Name(value=param.type_name)
-        if optional:
+        anno = libcst.Name(value=param.type_name)
+
+        for container in containers:
+            # Should be updated when python <3.9 support is dropped
+            AddImportsVisitor.add_needed_import(self.context, "typing", container)
+
             anno = libcst.Subscript(
-                value=libcst.Name(value="Optional"),
-                slice=[libcst.SubscriptElement(slice=libcst.Index(value=type_name))],
+                value=libcst.Name(value=container),
+                slice=[libcst.SubscriptElement(slice=libcst.Index(value=anno))],
             )
-        else:
-            anno = type_name
         return updated_node.with_changes(annotation=libcst.Annotation(annotation=anno))
 
 

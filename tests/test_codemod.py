@@ -348,3 +348,174 @@ class TestAutotype(CodemodTest):
                 pass
         """
         self.assertCodemod(before, after, annotate_imprecise_magics=True)
+
+    def test_guessed_name(self) -> None:
+        before = """
+            def foo(name):
+                pass
+        """
+        after = """
+            def foo(name: str):
+                pass
+        """
+        self.assertCodemod(before, after, guess_common_names=True)
+
+    def test_guessed_name_optional(self) -> None:
+        before = """
+            def foo(name=None):
+                pass
+        """
+        after = """
+            from typing import Optional
+
+            def foo(name: Optional[str]=None):
+                pass
+        """
+        self.assertCodemod(before, after, guess_common_names=True)
+
+    def test_guessed_and_named_param(self) -> None:
+        before = """
+            def foo(uid, qid):
+                pass
+            def bar(name):
+                pass
+        """
+        after = """
+            from my_types import Uid
+
+            def foo(uid: Uid, qid):
+                pass
+            def bar(name: str):
+                pass
+        """
+        self.assertCodemod(
+            before,
+            after,
+            guess_common_names=True,
+            annotate_named_param=["uid:my_types.Uid"],
+        )
+
+    def test_optional_guessed_and_annotate_optional(self) -> None:
+        before = """
+            def foo(real=None, qid=None):
+                pass
+            def bar(name=None):
+                pass
+        """
+        after = """
+            from my_types import Uid
+            from typing import Optional
+
+            def foo(real: Optional[Uid]=None, qid=None):
+                pass
+            def bar(name: Optional[str]=None):
+                pass
+        """
+        self.assertCodemod(
+            before,
+            after,
+            guess_common_names=True,
+            annotate_optional=["real:my_types.Uid"],
+        )
+
+    def test_guess_type_from_argname1(self) -> None:
+        before = """
+            def foo(list_int, set_ints):
+                ...
+            def bar(iterator_bool, deque_float):
+                ...
+            def no_guess(list_widths, container_int):
+                ...
+        """
+        after = """
+            from typing import Deque, Iterator, List, Set
+
+            def foo(list_int: List[int], set_ints: Set[int]):
+                ...
+            def bar(iterator_bool: Iterator[bool], deque_float: Deque[float]):
+                ...
+            def no_guess(list_widths, container_int):
+                ...
+        """
+        self.assertCodemod(before, after, guess_common_names=True)
+
+    def test_guess_type_from_argname2(self) -> None:
+        before = """
+            def foo(int_list, ints_list, intslist):
+                ...
+            def bar(width_list, words_list, bool_list):
+                ...
+            def no_guess(save_list, real_list, int_lists):
+                ...
+        """
+        after = """
+            from typing import List
+
+            def foo(int_list: List[int], ints_list: List[int], intslist: List[int]):
+                ...
+            def bar(width_list: List[int], words_list: List[str], bool_list: List[bool]):
+                ...
+            def no_guess(save_list, real_list, int_lists):
+                ...
+        """
+        self.maxDiff = None
+        self.assertCodemod(before, after, guess_common_names=True)
+
+    def test_guess_type_from_argname3(self) -> None:
+        before = """
+            def foo(list_of_int, tuple_of_ints):
+                ...
+            def bar(deque_of_alphas, list_of_string):
+                ...
+            def no_guess(list_of_save, list_of_reals, list_of_list_of_int):
+                ...
+        """
+        after = """
+            from typing import Deque, List, Tuple
+
+            def foo(list_of_int: List[int], tuple_of_ints: Tuple[int]):
+                ...
+            def bar(deque_of_alphas: Deque[float], list_of_string: List[str]):
+                ...
+            def no_guess(list_of_save, list_of_reals, list_of_list_of_int):
+                ...
+        """
+        self.assertCodemod(before, after, guess_common_names=True)
+
+    def test_guess_type_from_argname4(self) -> None:
+        before = """
+            def foo(reals, texts):
+                ...
+            def bar(shuffles, saves):
+                ...
+            def no_guess(radiuss, radius_s):
+                ...
+        """
+        after = """
+            from typing import Sequence
+
+            def foo(reals: Sequence[float], texts: Sequence[str]):
+                ...
+            def bar(shuffles: Sequence[bool], saves: Sequence[bool]):
+                ...
+            def no_guess(radiuss, radius_s):
+                ...
+        """
+        self.assertCodemod(before, after, guess_common_names=True)
+
+    def test_guess_type_from_argname_optional(self) -> None:
+        before = """
+            def foo(reals = None, set_of_int = None):
+                ...
+            def foo2(int_tuple = None, iterator_int = None):
+                ...
+            """
+        after = """
+            from typing import Iterator, Optional, Sequence, Set, Tuple
+
+            def foo(reals: Optional[Sequence[float]] = None, set_of_int: Optional[Set[int]] = None):
+                ...
+            def foo2(int_tuple: Optional[Tuple[int]] = None, iterator_int: Optional[Iterator[int]] = None):
+                ...
+        """
+        self.assertCodemod(before, after, guess_common_names=True)
