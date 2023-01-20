@@ -82,19 +82,28 @@ There are two shortcut flags to enable multiple transformations at once:
 
 # Changelog
 
-22.9.0 (September 5, 2022)
+## Unreleased
+
+- Add `--guess-common-names` (contributed by John Litborn)
+- Fix the `--safe` and `--aggressive` flags so they don't take
+  ignored arguments
+- `--length-hint` should return `int` (contributed by Nikita Sobolev)
+- Fix bug in import adding (contributed by Shantanu)
+
+## 22.9.0 (September 5, 2022)
 
 - Add `--safe` and `--aggressive`
 - Add `--pyanalyze-report`
 - Do not add `None` return types to methods marked with `@abstractmethod` and
   to methods in stub files
 - Improve type inference:
+
   - `"string" % ...` is always `str`
   - `b"bytes" % ...` is always `bytes`
   - An `and` or `or` operator where left and right sides are of the same type
     returns that type
   - `is`, `is not`, `in`, and `not in` always return `bool`
 
-21.12.0 (December 21, 2021)
+## 21.12.0 (December 21, 2021)
 
 - Initial PyPI release
