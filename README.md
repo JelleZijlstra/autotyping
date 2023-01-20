@@ -8,6 +8,8 @@ It is built as a LibCST codemod; see the
 [LibCST documentation](https://libcst.readthedocs.io/en/latest/codemods_tutorial.html)
 for more information on how to use codemods.
 
+# Usage
+
 Here's how to use it:
 
 - `pip install autotyping`
@@ -82,6 +84,18 @@ There are two shortcut flags to enable multiple transformations at once:
   new type checker errors. It includes all of `--safe` as well as `--bool-param`,
   `--int-param`, `--float-param`, `--str-param`, `--bytes-param`, and
   `--annotate-imprecise-magics`.
+
+# Limitations
+
+Autotyping is intended to be a simple tool that uses heuristics to find
+annotations that would be tedious to add by hand. The heuristics may fail,
+and after you run autotyping you should run a type checker to verify that
+the types it added are correct.
+
+Known limitations:
+
+- autotyping does not model code flow through a function, so it may miss
+  implicit `None` returns
 
 # Changelog
 
