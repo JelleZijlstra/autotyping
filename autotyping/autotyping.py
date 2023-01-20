@@ -10,7 +10,7 @@ from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 from libcst.codemod.visitors import AddImportsVisitor
 from libcst.metadata import CodePosition, CodeRange, PositionProvider
 
-from autotyping.guess_type_from_argname import guess_type_from_argname
+from autotyping.guess_type import guess_type_from_argname
 
 _DEFAULT_POSITION = CodePosition(0, 0)
 _DEFAULT_CODE_RANGE = CodeRange(_DEFAULT_POSITION, _DEFAULT_POSITION)

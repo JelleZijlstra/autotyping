@@ -1,4 +1,4 @@
-from typing import Tuple, Optional, List, TYPE_CHECKING
+from typing import Tuple, Optional, List
 import re
 
 
