@@ -4,7 +4,6 @@ import enum
 import json
 from typing import Dict, List, Optional, Sequence, Set, Tuple, Type
 from typing_extensions import TypedDict
-import re
 
 import libcst
 from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
@@ -88,37 +87,6 @@ IMPRECISE_MAGICS = {
     "__reversed__": ("typing", "Iterator"),
     "__await__": ("typing", "Iterator"),
 }
-
-
-class _SafeAction(argparse.Action):
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: object,
-        option_string: Optional[str] = ...,
-    ) -> None:
-        namespace.none_return = True
-        namespace.scalar_return = True
-        namespace.annotate_magics = True
-
-
-class _AggressiveAction(_SafeAction):
-    def __call__(
-        self,
-        parser: argparse.ArgumentParser,
-        namespace: argparse.Namespace,
-        values: object,
-        option_string: Optional[str] = ...,
-    ) -> None:
-        super().__call__(parser, namespace, values, option_string)
-        namespace.bool_param = True
-        namespace.int_param = True
-        namespace.float_param = True
-        namespace.str_param = True
-        namespace.bytes_param = True
-        namespace.annotate_imprecise_magics = True
-        namespace.guess_common_names = True
 
 
 class AutotypeCommand(VisitorBasedCodemodCommand):
@@ -230,15 +198,15 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         )
         arg_parser.add_argument(
             "--safe",
-            action=_SafeAction,
+            action="store_true",
+            default=False,
             help="Apply all safe transformations",
-            nargs="?",
         )
         arg_parser.add_argument(
             "--aggressive",
-            action=_AggressiveAction,
+            action="store_true",
+            default=False,
             help="Apply all transformations that do not require arguments",
-            nargs="?",
         )
 
     def __init__(
@@ -262,6 +230,18 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
         safe: bool = False,
         aggressive: bool = False,
     ) -> None:
+        if safe or aggressive:
+            none_return = True
+            scalar_return = True
+            annotate_magics = True
+        if aggressive:
+            bool_param = True
+            int_param = True
+            float_param = True
+            str_param = True
+            bytes_param = True
+            annotate_imprecise_magics = True
+            guess_common_names = True
         super().__init__(context)
         param_type_pairs = [
             (bool_param, bool),
@@ -295,12 +275,16 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
                     )
                 ] = metadata
         self.state = State(
-            annotate_optionals=[NamedParam.make(s) for s in annotate_optional]
-            if annotate_optional
-            else [],
-            annotate_named_params=[NamedParam.make(s) for s in annotate_named_param]
-            if annotate_named_param
-            else [],
+            annotate_optionals=(
+                [NamedParam.make(s) for s in annotate_optional]
+                if annotate_optional
+                else []
+            ),
+            annotate_named_params=(
+                [NamedParam.make(s) for s in annotate_named_param]
+                if annotate_named_param
+                else []
+            ),
             none_return=none_return,
             scalar_return=scalar_return,
             param_types={typ for param, typ in param_type_pairs if param},
