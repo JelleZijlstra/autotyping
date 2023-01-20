@@ -37,6 +37,9 @@ more transformations. The following are supported:
     default that is named `foo` with `bar.Baz`. For example, use
     `--annotate-named-param uid:my_types.Uid` to annotate any `uid`
     parameter in your codebase with no default as `my_types.Uid`.
+  - `--guess-common-names`: infer certain parameter types from their names
+    based on common patterns in open-source Python code. For example, infer
+    that a `verbose` parameter is of type `bool`.
 - Annotating magical methods:
   - `--annotate-magics`: add type annotation to certain magic methods.
     Currently this does the following:
@@ -97,7 +100,6 @@ There are two shortcut flags to enable multiple transformations at once:
 - Do not add `None` return types to methods marked with `@abstractmethod` and
   to methods in stub files
 - Improve type inference:
-
   - `"string" % ...` is always `str`
   - `b"bytes" % ...` is always `bytes`
   - An `and` or `or` operator where left and right sides are of the same type
