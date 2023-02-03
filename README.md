@@ -99,7 +99,7 @@ Known limitations:
 
 # Changelog
 
-## Unreleased
+## 23.2.0 (February 3, 2023)
 
 - Add `--guess-common-names` (contributed by John Litborn)
 - Fix the `--safe` and `--aggressive` flags so they don't take
