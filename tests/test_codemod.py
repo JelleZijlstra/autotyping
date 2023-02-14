@@ -333,11 +333,11 @@ class TestAutotype(CodemodTest):
     def test_empty_elems(self) -> None:
         before = """
             def foo(iterables):
-                zip(*(bar(it) for it in iterables))
+                ...
         """
         after = """
             def foo(iterables) -> None:
-                zip(*(bar(it) for it in iterables))
+                ...
         """
         self.assertCodemod(before, after, none_return=True)
 
