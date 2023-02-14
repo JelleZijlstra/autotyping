@@ -330,7 +330,7 @@ class TestAutotype(CodemodTest):
         """
         self.assertCodemod(before, after, annotate_magics=True)
 
-    def test_zip_star(self) -> None:
+    def test_empty_elems(self) -> None:
         before = """
             def foo(iterables):
                 zip(*(bar(it) for it in iterables))
