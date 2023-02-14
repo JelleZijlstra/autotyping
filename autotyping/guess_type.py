@@ -40,15 +40,16 @@ def guess_type_from_argname(name: str) -> Tuple[Optional[str], List[str]]:
         # only do a simple container match
         # and don't check all of BOOL_NAMES to not trigger on stuff like "save_list"
         elems = m.group("elems")
-        for names, name_type in (
-            (("bool", "boolean"), "bool"),
-            # don't trigger on `real_list`
-            (FLOAT_NAMES - {"real"}, "float"),
-            (INTEGER_NAMES, "int"),
-            (STRING_NAMES | {"string", "str"}, "str"),
-        ):
-            if elems in names or (elems[-1] == "s" and elems[:-1] in names):
-                return name_type, [m.group("container").capitalize()]
+        if elems:
+            for names, name_type in (
+                (("bool", "boolean"), "bool"),
+                # don't trigger on `real_list`
+                (FLOAT_NAMES - {"real"}, "float"),
+                (INTEGER_NAMES, "int"),
+                (STRING_NAMES | {"string", "str"}, "str"),
+            ):
+                if elems in names or (elems[-1] == "s" and elems[:-1] in names):
+                    return name_type, [m.group("container").capitalize()]
 
     # Names which imply the value is a boolean
     if name.startswith("is_") or name in BOOL_NAMES:

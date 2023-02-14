@@ -330,6 +330,17 @@ class TestAutotype(CodemodTest):
         """
         self.assertCodemod(before, after, annotate_magics=True)
 
+    def test_zip_star(self) -> None:
+        before = """
+            def foo(iterables):
+                zip(*(bar(it) for it in iterables))
+        """
+        after = """
+            def foo(iterables) -> None:
+                zip(*(bar(it) for it in iterables))
+        """
+        self.assertCodemod(before, after, none_return=True)
+
     def test_annotate_imprecise_magics(self) -> None:
         before = """
             def __iter__():
