@@ -34,8 +34,8 @@ def guess_type_from_argname(name: str) -> Tuple[Optional[str], List[str]]:
     # (container)_of_<name>(s)
     # e.g. set_of_widths => Set[int]
     m = re.fullmatch(
-        rf"(?P<elems>\w*?)_?(?P<container>{containers})", name
-    ) or re.fullmatch(rf"(?P<container>{containers})_of_(?P<elems>\w*)", name)
+        rf"(?P<elems>\w+?)_?(?P<container>{containers})", name
+    ) or re.fullmatch(rf"(?P<container>{containers})_of_(?P<elems>\w+)", name)
     if m:
         # only do a simple container match
         # and don't check all of BOOL_NAMES to not trigger on stuff like "save_list"

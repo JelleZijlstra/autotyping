@@ -330,6 +330,17 @@ class TestAutotype(CodemodTest):
         """
         self.assertCodemod(before, after, annotate_magics=True)
 
+    def test_empty_elems(self) -> None:
+        before = """
+            def foo(iterables):
+                ...
+        """
+        after = """
+            def foo(iterables) -> None:
+                ...
+        """
+        self.assertCodemod(before, after, none_return=True, guess_common_names=True)
+
     def test_annotate_imprecise_magics(self) -> None:
         before = """
             def __iter__():
