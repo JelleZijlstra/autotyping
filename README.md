@@ -99,6 +99,11 @@ Known limitations:
 
 # Changelog
 
+## 23.3.0 (March 3, 2023)
+
+- Fix crash on certain argument names like `iterables` (contributed by
+  Marco Gorelli)
+
 ## 23.2.0 (February 3, 2023)
 
 - Add `--guess-common-names` (contributed by John Litborn)
