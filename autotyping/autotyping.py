@@ -81,6 +81,13 @@ SIMPLE_MAGICS = {
     "__int__": "int",
     "__float__": "float",
     "__index__": "int",
+    "__setattr__": "None",
+    "__delattr__": "None",
+    "__setitem__": "None",
+    "__delitem__": "None",
+    "__set__": "None",
+    "__instancecheck__": "bool",
+    "__subclasscheck__": "bool",
 }
 IMPRECISE_MAGICS = {
     "__iter__": ("typing", "Iterator"),
