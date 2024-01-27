@@ -274,13 +274,11 @@ class AutotypeCommand(VisitorBasedCodemodCommand):
                     "suggested_return_type",
                 ):
                     continue
-                pyanalyze_suggestions[
-                    (
-                        failure["absolute_filename"],
-                        failure["lineno"],
-                        failure["col_offset"],
-                    )
-                ] = metadata
+                pyanalyze_suggestions[(
+                    failure["absolute_filename"],
+                    failure["lineno"],
+                    failure["col_offset"],
+                )] = metadata
         self.state = State(
             annotate_optionals=(
                 [NamedParam.make(s) for s in annotate_optional]
