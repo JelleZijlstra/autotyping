@@ -4,18 +4,12 @@ return anything, boolean flags, etcetera. That's where autotyping
 comes in: it automatically adds those types and inserts the right
 annotations.
 
-It is built as a LibCST codemod; see the
-[LibCST documentation](https://libcst.readthedocs.io/en/latest/codemods_tutorial.html)
-for more information on how to use codemods.
-
 # Usage
 
 Here's how to use it:
 
 - `pip install autotyping`
-- Make sure you have a `.libcst.codemod.yaml` with `'autotyping'` in the `modules` list.
-  For an example, see the `.libcst.codemod.yaml` in this repo.
-- Run `python -m libcst.tool codemod autotyping.AutotypeCommand /path/to/my/code`
+- `python -m autotyping /path/to/my/code`
 
 By default it does nothing; you have to add flags to make it do
 more transformations. The following are supported:
@@ -84,6 +78,17 @@ There are two shortcut flags to enable multiple transformations at once:
   new type checker errors. It includes all of `--safe` as well as `--bool-param`,
   `--int-param`, `--float-param`, `--str-param`, `--bytes-param`, and
   `--annotate-imprecise-magics`.
+
+# LibCST
+
+autotyping is built as a LibCST codemod; see the
+[LibCST documentation](https://libcst.readthedocs.io/en/latest/codemods_tutorial.html)
+for more information on how to use codemods.
+
+If you wish to run things through the `libcst.tool` interface, you can do this like so:
+- Make sure you have a `.libcst.codemod.yaml` with `'autotyping'` in the `modules` list.
+  For an example, see the `.libcst.codemod.yaml` in this repo.
+- Run `python -m libcst.tool codemod autotyping.AutotypeCommand /path/to/my/code`
 
 # Limitations
 
