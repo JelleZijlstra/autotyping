@@ -81,7 +81,7 @@ There are two shortcut flags to enable multiple transformations at once:
 
 # LibCST
 
-autotyping is built as a LibCST codemod; see the
+Autotyping is built as a LibCST codemod; see the
 [LibCST documentation](https://libcst.readthedocs.io/en/latest/codemods_tutorial.html)
 for more information on how to use codemods.
 
