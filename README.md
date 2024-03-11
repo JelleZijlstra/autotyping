@@ -99,6 +99,10 @@ Known limitations:
 
 # Changelog
 
+## Unreleased
+
+- Drop support for Python 3.7; add support for Python 3.12
+
 ## 23.3.0 (March 3, 2023)
 
 - Fix crash on certain argument names like `iterables` (contributed by
