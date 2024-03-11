@@ -20,10 +20,9 @@ def guess_type_from_argname(name: str) -> Tuple[Optional[str], List[str]]:
     # (container)_(int|float|str|bool)s?
     # e.g. list_ints => List[int]
     # only check for built-in types to avoid false alarms, e.g. list_create, list_length
-    m = re.fullmatch(
+    if m := re.fullmatch(
         rf"(?P<container>{containers})_(?P<elems>int|float|str|bool)s?", name
-    )
-    if m:  # mfw 3.7 doesn't have the walrus operator :(
+    ):
         container_type = m.group("container").capitalize()
         if container_type == "Iter":
             container_type = "Iterable"
@@ -33,10 +32,9 @@ def guess_type_from_argname(name: str) -> Tuple[Optional[str], List[str]]:
     # e.g. latitude_list => List[float]
     # (container)_of_<name>(s)
     # e.g. set_of_widths => Set[int]
-    m = re.fullmatch(
+    if m := re.fullmatch(
         rf"(?P<elems>\w+?)_?(?P<container>{containers})", name
-    ) or re.fullmatch(rf"(?P<container>{containers})_of_(?P<elems>\w+)", name)
-    if m:
+    ) or re.fullmatch(rf"(?P<container>{containers})_of_(?P<elems>\w+)", name):
         # only do a simple container match
         # and don't check all of BOOL_NAMES to not trigger on stuff like "save_list"
         elems = m.group("elems")
