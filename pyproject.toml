@@ -1,3 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "autotyping"
+dynamic = ["version"]
+description = "A tool for autoadding simple type annotations."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.8"
+authors = [
+    { name = "Jelle Zijlstra", email = "jelle.zijlstra@gmail.com" },
+]
+keywords = [
+    "annotations",
+    "typing",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development",
+]
+dependencies = [
+    "libcst",
+]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/JelleZijlstra/autotyping/issues"
+Homepage = "https://github.com/JelleZijlstra/autotyping"
+
+[tool.hatch.version]
+path = "autotyping/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/autotyping",
+]
+
 [tool.black]
 target_version = ['py38', 'py39', 'py310', 'py311', 'py312']
 include = '\.pyi?$'
@@ -17,6 +65,3 @@ missing_parameter_annotation = true
 missing_return_annotation = true
 incompatible_override = true
 
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
