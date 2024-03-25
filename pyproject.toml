@@ -1,6 +1,6 @@
 [project]
 name = "autotyping"
-version = "23.3.0"
+version = "24.3.0"
 description = "A tool for autoadding simple type annotations."
 readme = "README.md"
 requires-python = ">=3.8"
