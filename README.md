@@ -106,9 +106,13 @@ Known limitations:
 
 # Changelog
 
-## Unreleased
+## 24.3.0 (March 25, 2024)
 
-- Drop support for Python 3.7; add support for Python 3.12
+- Add simpler ways to invoke autotyping. Now, it is possible to simply use
+  `python3 -m autotyping` to invoke the tool. (Thanks to Shantanu Jain.)
+- Drop support for Python 3.7; add support for Python 3.12. (Thanks to Hugo
+  van Kemenade.)
+- Infer return types for some more magic methods. (Thanks to Dhruv Manilawala.)
 
 ## 23.3.0 (March 3, 2023)
 
