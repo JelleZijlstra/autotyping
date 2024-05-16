@@ -27,6 +27,7 @@ classifiers = [
 ]
 dependencies = [
     "libcst",
+    "typing-extensions",
 ]
 
 [project.scripts]
