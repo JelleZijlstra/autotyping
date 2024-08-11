@@ -6,7 +6,8 @@ annotations.
 
 # Usage
 
-Here's how to use it:
+Autotyping can be called directly from the CLI, be used as a [pre-commit hook](#pre-commit-hook) or run via the [`libcst` interface](#LibCST) as a codemod.
+Here's how to use it from the CLI:
 
 - `pip install autotyping`
 - `python -m autotyping /path/to/my/code`
@@ -91,6 +92,44 @@ If you wish to run things through the `libcst.tool` interface, you can do this l
 - Make sure you have a `.libcst.codemod.yaml` with `'autotyping'` in the `modules` list.
   For an example, see the `.libcst.codemod.yaml` in this repo.
 - Run `python -m libcst.tool codemod autotyping.AutotypeCommand /path/to/my/code`
+
+
+# pre-commit hook
+
+Pre-commit hooks are scripts that runs automatically before a commit is made,
+which makes them really handy for checking and enforcing code-formatting 
+(or in this case, typing)
+
+1. To add `autotyping` as a [pre-commit](https://pre-commit.com/) hook, 
+you will first need to install pre-commit if you haven't already:
+```
+pip install pre-commit
+```
+
+2. After that, create or update the `.pre-commit-config.yaml` file at the root
+of your repository and add in:
+
+```yaml
+- repos:
+  - repo: https://github.com/JelleZijlstra/autotyping
+    rev:  v24.4.0
+    hooks:
+      - id: autotyping
+        stages: [commit]
+        types: [python]
+        args: [--safe] # or alternatively, --aggressive, see below for how they're different
+```
+
+3. Finally, run the following command to install the pre-commit hook
+in your repository:
+
+```
+pre-commit install
+```
+
+Now whenever you commit changes, autotyping will automatically add
+type annotations to your code!
+
 
 # Limitations
 
