@@ -117,7 +117,7 @@ of your repository and add in:
       - id: autotyping
         stages: [commit]
         types: [python]
-        args: [--safe] # or alternatively, --aggressive, see below for how they're different
+        args: [--safe] # or alternatively, --aggressive, or any of the other flags mentioned above 
 ```
 
 3. Finally, run the following command to install the pre-commit hook
