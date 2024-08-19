@@ -1,0 +1,9 @@
+- id: autotyping
+  name: autotyping
+  description: Automatically add simple type-annotations to your code.
+  entry: autotyping
+  language: python
+  types_or: [python, pyi]
+  args: [*]
+  additional_dependencies: []
+  minimum_pre_commit_version: 2.9.2
