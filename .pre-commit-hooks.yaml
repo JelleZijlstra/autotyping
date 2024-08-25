@@ -4,6 +4,6 @@
   entry: autotyping
   language: python
   types_or: [python, pyi]
-  args: [*]
+  args: []
   additional_dependencies: []
-  minimum_pre_commit_version: 2.9.2
+  minimum_pre_commit_version: 3.0.0
