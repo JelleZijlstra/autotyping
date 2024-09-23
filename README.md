@@ -112,7 +112,7 @@ of your repository and add in:
 ```yaml
 - repos:
   - repo: https://github.com/JelleZijlstra/autotyping
-    rev:  v24.4.0
+    rev:  v24.9.0
     hooks:
       - id: autotyping
         stages: [commit]
@@ -144,6 +144,11 @@ Known limitations:
   implicit `None` returns
 
 # Changelog
+
+## 24.9.0 (September 23, 2024)
+
+- Add pre-commit support. (Thanks to Akshit Tyagi and Matthew Akram.)
+- Add missing dependency. (Thanks to Stefane Fermigier.)
 
 ## 24.3.0 (March 25, 2024)
 
