@@ -112,7 +112,7 @@ of your repository and add in:
 ```yaml
 - repos:
   - repo: https://github.com/JelleZijlstra/autotyping
-    rev:  v24.4.0
+    rev:  v24.9.0
     hooks:
       - id: autotyping
         stages: [commit]
