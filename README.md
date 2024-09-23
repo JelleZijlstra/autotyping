@@ -145,6 +145,11 @@ Known limitations:
 
 # Changelog
 
+## 24.9.0 (September 23, 2024)
+
+- Add pre-commit support. (Thanks to Akshit Tyagi and Matthew Akram.)
+- Add missing dependency. (Thanks to Stefane Fermigier.)
+
 ## 24.3.0 (March 25, 2024)
 
 - Add simpler ways to invoke autotyping. Now, it is possible to simply use
