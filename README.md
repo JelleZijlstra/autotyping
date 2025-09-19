@@ -115,7 +115,7 @@ of your repository and add in:
     rev: 24.9.0
     hooks:
       - id: autotyping
-        stages: [commit]
+        stages: [pre-commit]
         types: [python]
         args: [--safe] # or alternatively, --aggressive, or any of the other flags mentioned above 
 ```
