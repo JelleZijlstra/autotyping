@@ -1,6 +1,35 @@
 from typing import Tuple, Optional, List
 import re
 
+OPTIONAL_PREFIXES = (
+    "maybe_",
+    "optional_",
+    "default_",
+    "max_",
+    "min_",
+)
+
+OPTIONAL_SUFFIXES = (
+    "_or_none",
+    "_optional",
+)
+
+COUNT_PREFIXES = (
+    "num_",
+    "n_",
+    "count_",
+    "total_",
+)
+
+CONTAINER_MAP = {
+    "list": "List",
+    "set": "Set",
+    "tuple": "Tuple",
+    "deque": "Deque",
+    "iter": "Iterable",
+    "iterator": "Iterator",
+    "iterable": "Iterable",
+}
 
 # strategy heavily inspired by
 # https://github.com/Zac-HD/hypothesis/blob/07ff885edaa0c11f480a8639a75101c6fe14844f/hypothesis-python/src/hypothesis/extra/ghostwriter.py#L319
@@ -13,6 +42,15 @@ def guess_type_from_argname(name: str) -> Tuple[Optional[str], List[str]]:
     some standard-library docs, plus the analysis of about three hundred million
     arguments in https://github.com/HypothesisWorks/hypothesis/issues/3311
     """
+    is_optional = (
+        name.startswith(OPTIONAL_PREFIXES)
+        or name.endswith(OPTIONAL_SUFFIXES)
+    )
+
+    def maybe_optional(type_name: Optional[str]) -> Optional[str]:
+        if is_optional and type_name is not None:
+         return f"Optional[{type_name}]"
+        return type_name
 
     containers = "deque|list|set|iterator|tuple|iter|iterable"
     # not using 'sequence', 'counter' or 'collection' due to likely false alarms
@@ -48,9 +86,11 @@ def guess_type_from_argname(name: str) -> Tuple[Optional[str], List[str]]:
             if elems in names or (elems[-1] == "s" and elems[:-1] in names):
                 return name_type, [m.group("container").capitalize()]
 
-    # Names which imply the value is a boolean
+    # Boolean indicators
     if name.startswith("is_") or name in BOOL_NAMES:
-        return "bool", []
+       return maybe_optional("bool"), []
+    
+    #integer indicators
 
     if (
         name.endswith("_size")
@@ -58,10 +98,14 @@ def guess_type_from_argname(name: str) -> Tuple[Optional[str], List[str]]:
         or re.fullmatch(r"n(um)?_[a-z_]*s", name)
         or name in INTEGER_NAMES
     ):
-        return "int", []
+        return maybe_optional("int"), []
+    
+    #float indicators
 
     if name in FLOAT_NAMES:
-        return "float", []
+         return maybe_optional("float"), []
+    
+    #path-lkike values 
 
     if (
         "file" in name
@@ -72,6 +116,8 @@ def guess_type_from_argname(name: str) -> Tuple[Optional[str], List[str]]:
         # Common names for filesystem paths: these are usually strings, but we
         # don't want to make strings more convenient than pathlib.Path.
         return None, []
+    
+    #string indicators
 
     if (
         name.endswith("_name")
@@ -80,13 +126,16 @@ def guess_type_from_argname(name: str) -> Tuple[Optional[str], List[str]]:
         or name.endswith("label")
         or name in STRING_NAMES
     ):
-        return "str", []
+        return maybe_optional("str"), []
 
     # Last clever idea: maybe we're looking a plural, and know the singular:
     # don't trigger on multiple ending "s" to avoid nested calls
     if re.fullmatch(r"\w*[^s]s", name):
-        elems, container = guess_type_from_argname(name[:-1])
-        if elems is not None and not container:
+         if name.startswith(COUNT_PREFIXES):
+            return maybe_optional("int"), []
+         
+         elems, container = guess_type_from_argname(name[:-1])
+         if elems is not None and not container:
             return elems, ["Sequence"]
 
     return None, []
