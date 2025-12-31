@@ -29,13 +29,19 @@ def main() -> int:
     # Based on:
     # https://github.com/Instagram/LibCST/blob/36e791ebe5f008af91a2ccc6be4900e69fad190d/libcst/tool.py#L593
     files = gather_files(bases, include_stubs=True)
+    if not files:
+        print("No Python files found to process.", file=sys.stderr)
+        return 0
     try:
         result = parallel_exec_transform_with_prettyprint(
             AutotypeCommand(CodemodContext(), **kwargs), files, repo_root=root
         )
     except KeyboardInterrupt:
         print("Interrupted!", file=sys.stderr)
-        return 2
+        # 130 is the conventional exit code for SIGINT (Ctrl+C)
+        return 130
+    
+    total = result.successes + result.skips + result.failures
 
     print(
         f"Finished codemodding {result.successes + result.skips + result.failures} files!",
@@ -45,6 +51,9 @@ def main() -> int:
     print(f" - Skipped {result.skips} files.", file=sys.stderr)
     print(f" - Failed to codemod {result.failures} files.", file=sys.stderr)
     print(f" - {result.warnings} warnings were generated.", file=sys.stderr)
+    # Exit codes:
+    # 0 = success
+    # 1 = failures occurred
     return 1 if result.failures > 0 else 0
 
 
